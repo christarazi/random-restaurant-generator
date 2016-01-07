@@ -1,114 +1,95 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
+    xmlns:map="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="0dp"
+    android:paddingLeft="0dp"
+    android:paddingRight="0dp"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin" tools:showIn="@layout/activity_main"
-    tools:context=".MainActivityFragment">
+    tools:context=".MainActivityFragment"
+    tools:showIn="@layout/activity_main">
 
     <RadioGroup
+        android:id="@+id/radioGroup"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
         android:layout_alignParentTop="true"
-        android:id="@+id/radioGroup">
+        android:layout_centerHorizontal="true">
 
         <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Use Zip Code"
             android:id="@+id/useZip"
-            android:checked="false" />
-
-        <RadioButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Use Location"
+            android:checked="false"
+            android:text="Use Zip Code" />
+
+        <RadioButton
             android:id="@+id/useLocation"
-            android:checked="false" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:text="Use Location" />
     </RadioGroup>
 
     <EditText
+        android:id="@+id/zipcode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:inputType="number"
-        android:ems="10"
-        android:id="@+id/zipcode"
-        android:hint="zip code"
         android:layout_below="@+id/radioGroup"
         android:layout_centerHorizontal="true"
+        android:ems="10"
+        android:hint="zip code"
+        android:inputType="number"
         android:visibility="gone" />
 
     <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Generate"
         android:id="@+id/generate"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_36sdp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_below="@+id/zipcode"
-        android:layout_centerHorizontal="true" />
+        android:text="Generate" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_120sdp"
+        android:layout_below="@+id/zipcode">
+
+    </android.support.v7.widget.RecyclerView>
 
     <LinearLayout
-        android:orientation="vertical"
+        android:id="@+id/cardMapView"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/generate"
-        android:layout_alignParentBottom="true"
+        android:layout_height="fill_parent"
+        android:layout_above="@id/generate"
+        android:layout_below="@id/recyclerView"
         android:animateLayoutChanges="true"
-        android:id="@+id/container">
+        android:visibility="invisible">
 
-        <LinearLayout
-            android:orientation="horizontal"
+        <android.support.v7.widget.CardView
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/itemContainer">
+            android:layout_height="fill_parent"
+            android:layout_marginBottom="@dimen/_4sdp"
+            android:layout_marginLeft="@dimen/_16sdp"
+            android:layout_marginRight="@dimen/_16sdp"
+            android:layout_marginTop="@dimen/_4sdp"
+            map:cardCornerRadius="@dimen/_2sdp"
+            map:cardElevation="@dimen/_2sdp">
 
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-
-                <ImageView
-                    android:layout_width="@dimen/_75sdp"
-                    android:layout_height="@dimen/_75sdp"
-                    android:id="@+id/thumbnail"
-                    android:layout_margin="@dimen/_5sdp"/>
-
-                <ImageView
-                    android:layout_width="@dimen/_75sdp"
-                    android:layout_height="@dimen/_15sdp"
-                    android:id="@+id/rating"
-                    android:layout_margin="@dimen/_5sdp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:orientation="vertical"
+            <com.google.android.gms.maps.MapView
+                android:id="@+id/mapView"
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="fill_parent"
+                android:apiKey="AIzaSyD7WaTwx4BUcwxw0KCe4I0CMPNO85fTfak"
+                android:padding="@dimen/_8sdp"
+                map:cameraZoom="14"
+                map:liteMode="false"
+                map:mapType="normal" />
+        </android.support.v7.widget.CardView>
 
-                <TextView
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:id="@+id/name"
-                    android:gravity="top"
-                    android:layout_margin="@dimen/_5sdp"/>
-
-                <TextView
-                    android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
-                    android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:id="@+id/categories"
-                    android:layout_margin="@dimen/_5sdp"/>
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"></LinearLayout>
 
     </LinearLayout>
 

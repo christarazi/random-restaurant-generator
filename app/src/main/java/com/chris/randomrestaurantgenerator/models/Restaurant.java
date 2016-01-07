@@ -1,4 +1,4 @@
-package com.chris.randomrestaurantgenerator;
+package com.chris.randomrestaurantgenerator.models;
 
 
 import java.util.ArrayList;
@@ -14,8 +14,12 @@ public class Restaurant {
     private String phoneNumber;
     private boolean isClosed;
     private String[] address;
+    private double lat;
+    private double lon;
 
-    public Restaurant(String name, float rating, String ratingImageURL, String thumbnailURL, int reviewCount, String url, ArrayList<String> categories, String phoneNumber, boolean isClosed, String[] address) {
+    public Restaurant(String name, float rating, String ratingImageURL, String thumbnailURL, int reviewCount,
+                      String url, ArrayList<String> categories, String phoneNumber, boolean isClosed,
+                      String[] address, double lat, double lon) {
         this.name = name;
         this.rating = rating;
         this.ratingImageURL = ratingImageURL;
@@ -26,6 +30,8 @@ public class Restaurant {
         this.phoneNumber = phoneNumber;
         this.isClosed = isClosed;
         this.address = address;
+        this.lat = lat;
+        this.lon = lon;
     }
 
     public String getName() {
@@ -66,5 +72,13 @@ public class Restaurant {
 
     public String getThumbnailURL() {
         return thumbnailURL;
+    }
+
+    public double getLat() {
+        return lat;
+    }
+
+    public double getLon() {
+        return lon;
     }
 }

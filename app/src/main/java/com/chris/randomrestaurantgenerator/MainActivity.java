@@ -1,14 +1,9 @@
 package com.chris.randomrestaurantgenerator;
 
-import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -58,8 +53,7 @@ public class MainActivity extends AppCompatActivity {
             case 0: {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                }
-                else {
+                } else {
                     AlertDialog.Builder dialog = new AlertDialog.Builder(getApplicationContext());
                     dialog.setMessage("Please enter your zip code because location services could not be used.");
                     dialog.setNeutralButton("OK", new DialogInterface.OnClickListener() {
@@ -73,20 +67,5 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-    }
-
-    private void getLocation(LocationManager locationManager, LocationListener locationListener) {
-        // Register the listener with the Location Manager to receive location updates
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                // Request the missing permissions for Android M
-                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
-
-            }
-
-        }
-        //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-        // Update GPS only once.
-        locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, locationListener, Looper.myLooper());
     }
 }

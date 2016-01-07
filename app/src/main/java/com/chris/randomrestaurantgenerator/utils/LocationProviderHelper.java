@@ -1,4 +1,4 @@
-package com.chris.randomrestaurantgenerator;
+package com.chris.randomrestaurantgenerator.utils;
 
 import android.Manifest;
 import android.app.Activity;
@@ -15,9 +15,6 @@ import android.widget.Toast;
 
 import static android.support.v4.content.ContextCompat.checkSelfPermission;
 
-/**
- * Created by chris on 1/2/16.
- */
 public class LocationProviderHelper {
 
     private Activity activity;
