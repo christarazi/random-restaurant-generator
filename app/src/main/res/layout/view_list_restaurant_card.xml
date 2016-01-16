@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.chris.randomrestaurantgenerator.views.RestaurantCard xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/listRestaurantContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/listImageHolder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/_4sdp">
+
+            <ImageView
+                android:id="@+id/listThumbnail"
+                android:layout_width="@dimen/_75sdp"
+                android:layout_height="@dimen/_75sdp" />
+
+            <ImageView
+                android:id="@+id/listRating"
+                android:layout_width="@dimen/_75sdp"
+                android:layout_height="@dimen/_15sdp"
+                android:layout_marginTop="@dimen/_4sdp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/listName"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@+id/listImageHolder"
+            android:layout_toRightOf="@+id/listImageHolder"
+            android:gravity="top"
+            android:paddingLeft="@dimen/_4sdp"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textSize="@dimen/_18sdp" />
+
+        <TextView
+            android:id="@+id/listCategories"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/listName"
+            android:layout_toEndOf="@+id/listImageHolder"
+            android:layout_toRightOf="@+id/listImageHolder"
+            android:paddingLeft="@dimen/_4sdp"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textSize="@dimen/_12sdp" />
+
+        <TextView
+            android:id="@+id/listDeals"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/listCategories"
+            android:layout_toEndOf="@+id/listImageHolder"
+            android:layout_toRightOf="@+id/listImageHolder"
+            android:paddingLeft="@dimen/_4sdp"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#66BB6A"
+            android:textSize="@dimen/_12sdp" />
+
+    </RelativeLayout>
+
+</com.chris.randomrestaurantgenerator.views.RestaurantCard>

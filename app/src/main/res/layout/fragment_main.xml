@@ -6,58 +6,53 @@
     android:paddingBottom="0dp"
     android:paddingLeft="0dp"
     android:paddingRight="0dp"
-    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingTop="0dp"
     tools:context=".MainActivityFragment"
     tools:showIn="@layout/activity_main">
 
-    <RadioGroup
-        android:id="@+id/radioGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true">
-
-        <RadioButton
-            android:id="@+id/useZip"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="false"
-            android:text="Use Zip Code" />
-
-        <RadioButton
-            android:id="@+id/useLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="false"
-            android:text="Use Location" />
-    </RadioGroup>
-
     <EditText
-        android:id="@+id/zipcode"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/radioGroup"
-        android:layout_centerHorizontal="true"
-        android:ems="10"
-        android:hint="zip code"
-        android:inputType="number"
-        android:visibility="gone" />
-
-    <Button
-        android:id="@+id/generate"
+        android:id="@+id/userLocationInfo"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/_36sdp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:gravity="center_vertical|start"
+        android:minHeight="@dimen/_42sdp"
+        android:textSize="@dimen/_12sdp"
+        android:singleLine="true"
+        android:paddingTop="@dimen/_2sdp"
+        android:paddingBottom="@dimen/_2sdp"
+        android:paddingLeft="?listPreferredItemPaddingLeft"
+        android:paddingRight="?listPreferredItemPaddingRight"
+        android:background="@android:color/white"
+        android:imeOptions="actionDone"
+        android:ems="10"
+        android:hint="Enter zipcode, address, city, or use Location"
+        android:drawableRight="@drawable/crosshairs_gps" />
+
+
+    <android.support.v7.widget.AppCompatButton
+        android:id="@+id/generate"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_gravity="bottom|center_horizontal"
-        android:text="Generate" />
+        android:layout_marginTop="@dimen/_4sdp"
+        android:layout_marginBottom="@dimen/activity_vertical_margin"
+        android:text="GENERATE"
+        android:textSize="@dimen/_12sdp"
+        android:textColor="#FFFFFF"
+        android:background="#F44336"
+        android:padding="0dp"
+        android:paddingRight="@dimen/_40sdp"
+        android:paddingLeft="@dimen/_40sdp"
+        style="@style/Widget.AppCompat.Button.Colored"/>
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_120sdp"
-        android:layout_below="@+id/zipcode">
-
+        android:layout_below="@+id/userLocationInfo">
     </android.support.v7.widget.RecyclerView>
 
     <LinearLayout
@@ -84,12 +79,10 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:apiKey="AIzaSyD7WaTwx4BUcwxw0KCe4I0CMPNO85fTfak"
-                android:padding="@dimen/_8sdp"
                 map:cameraZoom="14"
                 map:liteMode="false"
                 map:mapType="normal" />
         </android.support.v7.widget.CardView>
-
 
     </LinearLayout>
 

@@ -9,8 +9,8 @@
         app:showAsAction="never" />
     <item
         android:id="@+id/action_maybe_list"
-        android:icon="@drawable/places_ic_search"
+        android:icon="@drawable/ic_view_list_white_48dp"
         android:orderInCategory="100"
         android:title="Maybe List"
-        app:showAsAction="never" />
+        app:showAsAction="ifRoom" />
 </menu>

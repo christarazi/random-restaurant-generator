@@ -16,7 +16,9 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustNothing">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -24,9 +26,15 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".MaybeListActivity"
+            android:label="My Maybe List"
+            android:screenOrientation="portrait">
+        </activity>
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyD7WaTwx4BUcwxw0KCe4I0CMPNO85fTfak"></meta-data>
+            android:value="AIzaSyD7WaTwx4BUcwxw0KCe4I0CMPNO85fTfak"/>
     </application>
 
 

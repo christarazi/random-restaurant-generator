@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.chris.randomrestaurantgenerator.views.RestaurantCard xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:map="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/restaurantContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/_4sdp"
+    android:layout_marginLeft="@dimen/_16sdp"
+    android:layout_marginRight="@dimen/_16sdp"
+    android:layout_marginTop="@dimen/_4sdp"
+    map:contentPadding="@dimen/_4sdp"
+    map:cardCornerRadius="@dimen/_2sdp"
+    map:cardElevation="@dimen/_2sdp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/_4sdp"
+            android:id="@+id/imageHolder">
+
+            <ImageView
+                android:id="@+id/thumbnail"
+                android:layout_width="@dimen/_75sdp"
+                android:layout_height="@dimen/_75sdp" />
+
+            <ImageView
+                android:id="@+id/rating"
+                android:layout_width="@dimen/_75sdp"
+                android:layout_height="@dimen/_15sdp"
+                android:layout_marginTop="@dimen/_4sdp"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:textSize="@dimen/_18sdp"
+            android:paddingLeft="@dimen/_4sdp"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:layout_toRightOf="@+id/imageHolder"
+            android:layout_toEndOf="@+id/imageHolder" />
+
+        <TextView
+            android:id="@+id/categories"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/_12sdp"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:paddingLeft="@dimen/_4sdp"
+            android:layout_toRightOf="@+id/imageHolder"
+            android:layout_toEndOf="@+id/imageHolder"
+            android:layout_below="@id/name" />
+
+        <TextView
+            android:id="@+id/deals"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/categories"
+            android:layout_toEndOf="@+id/imageHolder"
+            android:layout_toRightOf="@+id/imageHolder"
+            android:paddingLeft="@dimen/_4sdp"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#66BB6A"
+            android:textSize="@dimen/_12sdp" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/addToMaybeList"
+            android:src="@drawable/ic_bookmark_border_black_24dp"
+            android:layout_alignBottom="@id/imageHolder"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"/>
+    </RelativeLayout>
+
+</com.chris.randomrestaurantgenerator.views.RestaurantCard>
