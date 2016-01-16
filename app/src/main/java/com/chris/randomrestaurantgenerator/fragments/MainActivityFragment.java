@@ -97,7 +97,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         recyclerView = (RecyclerView) rootLayout.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new UnscrollableLinearLayoutManager(getContext()));
 
-        mapCardContainer = (LinearLayout) rootLayout.findViewById(R.id.cardMapView);
+        mapCardContainer = (LinearLayout) rootLayout.findViewById(R.id.cardMapLayout);
         mapView = (MapView) rootLayout.findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
 
@@ -158,8 +158,10 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                 if (event.getAction() == MotionEvent.ACTION_UP) {
 
+                    int clickBoundary = userLocationInfo.getRight() - userLocationInfo.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width() - 45;
+
                     // If the user clicks on the Location icon, enable Location feature.
-                    if (event.getRawX() >= (userLocationInfo.getRight() - userLocationInfo.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                    if (event.getRawX() >= clickBoundary) {
                         ProgressDialog dialog = new ProgressDialog(getActivity());
                         dialog.setMessage("Getting location...");
                         dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
@@ -170,6 +172,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
                                 helper.dismissLocationUpdater();
+                                useGPS = false;
                             }
                         });
                         dialog.show();

@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:gravity="center_vertical|start"
-        android:minHeight="@dimen/_42sdp"
+        android:minHeight="@dimen/_36sdp"
         android:textSize="@dimen/_12sdp"
         android:singleLine="true"
         android:paddingTop="@dimen/_2sdp"
@@ -32,13 +32,12 @@
 
     <android.support.v7.widget.AppCompatButton
         android:id="@+id/generate"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="36dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginTop="@dimen/_4sdp"
-        android:layout_marginBottom="@dimen/activity_vertical_margin"
         android:text="GENERATE"
         android:textSize="@dimen/_12sdp"
         android:textColor="#FFFFFF"
@@ -56,9 +55,9 @@
     </android.support.v7.widget.RecyclerView>
 
     <LinearLayout
-        android:id="@+id/cardMapView"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:id="@+id/cardMapLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_above="@id/generate"
         android:layout_below="@id/recyclerView"
         android:animateLayoutChanges="true"
@@ -68,8 +67,8 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_marginBottom="@dimen/_4sdp"
-            android:layout_marginLeft="@dimen/_16sdp"
-            android:layout_marginRight="@dimen/_16sdp"
+            android:layout_marginLeft="@dimen/_8sdp"
+            android:layout_marginRight="@dimen/_8sdp"
             android:layout_marginTop="@dimen/_4sdp"
             map:cardCornerRadius="@dimen/_2sdp"
             map:cardElevation="@dimen/_2sdp">

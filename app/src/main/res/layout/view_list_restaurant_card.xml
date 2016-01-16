@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.chris.randomrestaurantgenerator.views.RestaurantCard xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:map="http://schemas.android.com/apk/res-auto"
     android:id="@+id/listRestaurantContainer"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/_4sdp"
+    android:layout_marginLeft="@dimen/_8sdp"
+    android:layout_marginRight="@dimen/_8sdp"
+    android:layout_marginTop="@dimen/_4sdp"
+    map:contentPadding="@dimen/_4sdp"
+    map:cardCornerRadius="@dimen/_2sdp"
+    map:cardElevation="@dimen/_2sdp">
 
     <RelativeLayout
         android:layout_width="match_parent"
