@@ -2,7 +2,6 @@ package com.chris.randomrestaurantgenerator.views;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -61,7 +60,15 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         Picasso.with(context).load(restaurant.getRatingImageURL()).into(holder.ratingImage);
         holder.nameOfRestaurant.setText(restaurant.getName());
         holder.categories.setText(restaurant.getCategories().toString());
-        holder.deals.setText(restaurant.getDeal());
+
+        if (restaurant.getDeal().length() != 0) {
+            holder.deals.setVisibility(View.VISIBLE);
+            holder.deals.setText(restaurant.getDeal());
+        }
+        else
+            holder.deals.setVisibility(View.GONE);
+
+        holder.distance.setText(String.format("%.2f mi away", restaurant.getDistance()));
     }
 
     @Override
@@ -76,6 +83,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         ImageView thumbnail;
         TextView categories;
         TextView deals;
+        TextView distance;
 
         ImageView addToSavedList;
 
@@ -87,6 +95,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
             thumbnail = (ImageView) itemView.findViewById(R.id.thumbnail);
             categories = (TextView) itemView.findViewById(R.id.categories);
             deals = (TextView) itemView.findViewById(R.id.deals);
+            distance = (TextView) itemView.findViewById(R.id.distance);
 
             addToSavedList = (ImageView) itemView.findViewById(R.id.addToSavedList);
 

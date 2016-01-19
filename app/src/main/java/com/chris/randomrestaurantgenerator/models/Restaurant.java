@@ -21,12 +21,13 @@ public class Restaurant implements Parcelable {
     private boolean isClosed;
     private ArrayList<String> address;
     private String deal;
+    private double distance;
     private double lat;
     private double lon;
 
     public Restaurant(String name, float rating, String ratingImageURL, String thumbnailURL, int reviewCount,
                       String url, ArrayList<String> categories, String phoneNumber, boolean isClosed,
-                      ArrayList<String> address, String deal, double lat, double lon) {
+                      ArrayList<String> address, String deal, double distance, double lat, double lon) {
         this.name = name;
         this.rating = rating;
         this.ratingImageURL = ratingImageURL;
@@ -38,6 +39,7 @@ public class Restaurant implements Parcelable {
         this.isClosed = isClosed;
         this.address = address;
         this.deal = deal;
+        this.distance = distance;
         this.lat = lat;
         this.lon = lon;
     }
@@ -86,6 +88,10 @@ public class Restaurant implements Parcelable {
         return deal;
     }
 
+    public double getDistance() {
+        return distance;
+    }
+
     public double getLat() {
         return lat;
     }
@@ -116,6 +122,7 @@ public class Restaurant implements Parcelable {
             address = null;
         }
         deal = in.readString();
+        distance = in.readDouble();
         lat = in.readDouble();
         lon = in.readDouble();
     }
@@ -148,6 +155,7 @@ public class Restaurant implements Parcelable {
             dest.writeList(address);
         }
         dest.writeString(deal);
+        dest.writeDouble(distance);
         dest.writeDouble(lat);
         dest.writeDouble(lon);
     }

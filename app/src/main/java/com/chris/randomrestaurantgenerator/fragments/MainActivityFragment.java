@@ -7,6 +7,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -15,7 +17,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -54,7 +55,9 @@ import org.scribe.model.Token;
 import org.scribe.model.Verb;
 import org.scribe.oauth.OAuthService;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
@@ -399,11 +402,11 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 // Get a random offset for Yelp results
                 startingOffset = new Random().nextInt(2) * 20;
 
-                if (lat.equals("") || lon.equals("")) {
-                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food&location=" + userInputStr + "&offset=" + startingOffset);
-                } else {
+                if (useGPS) {
                     request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food" +
                             "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
+                } else {
+                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food&location=" + userInputStr + "&offset=" + startingOffset);
                 }
 
                 service.signRequest(accessToken, request);
@@ -516,6 +519,25 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 double lat = locationJSON.getJSONObject("coordinate").getDouble("latitude");
                 double lon = locationJSON.getJSONObject("coordinate").getDouble("longitude");
 
+                float distance = 0;
+                Location restaurantLoc = new Location("restaurantLoc");
+                restaurantLoc.setLatitude(lat);
+                restaurantLoc.setLongitude(lon);
+                if (useGPS) {
+                    distance = locationHelper.getLocation().distanceTo(restaurantLoc);
+                }
+                else {
+                    Geocoder geocoder = new Geocoder(getContext());
+                    List<Address> addressList = geocoder.getFromLocationName(userLocationInfo.getText().toString(), 1);
+                    double estimatedLat = addressList.get(0).getLatitude();
+                    double estimatedLon = addressList.get(0).getLongitude();
+                    Location estimatedLocation = new Location("estimatedLocation");
+                    estimatedLocation.setLatitude(estimatedLat);
+                    estimatedLocation.setLongitude(estimatedLon);
+                    distance = estimatedLocation.distanceTo(restaurantLoc);
+                }
+                distance *= 0.000621371;    // Convert to miles
+
                 // Getting restaurant's address
                 JSONArray addressJSON = locationJSON.getJSONArray("display_address");
                 ArrayList<String> address = new ArrayList<>();
@@ -542,10 +564,10 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 // Construct a new Restaurant object with all the info we gathered above and return it
                 Restaurant restaurant = new Restaurant(obj.getString("name"), (float) obj.getDouble("rating"),
                         obj.getString("rating_img_url_large"), obj.getString("image_url"), obj.getInt("review_count"), obj.getString("url"), categories, obj.getString("phone"),
-                        obj.getBoolean("is_closed"), address, deals, lat, lon);
+                        obj.getBoolean("is_closed"), address, deals, distance, lat, lon);
 
                 return restaurant;
-            } catch (JSONException e) {
+            } catch (JSONException|IOException e) {
                 e.printStackTrace();
 
                 // Signal the task has finished (failed task is still a finished task)

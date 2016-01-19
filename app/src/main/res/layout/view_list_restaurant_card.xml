@@ -69,6 +69,16 @@
             android:textColor="#66BB6A"
             android:textSize="@dimen/_12sdp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/_4sdp"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:id="@+id/listDistance"
+            android:layout_below="@+id/listDeals"
+            android:layout_toRightOf="@+id/listImageHolder"
+            android:layout_toEndOf="@+id/listImageHolder" />
+
     </RelativeLayout>
 
 </com.chris.randomrestaurantgenerator.views.RestaurantCard>
