@@ -39,22 +39,18 @@ public class LocationProviderHelper {
             public void onLocationChanged(Location loc) {
                 locationChanged = true;
                 location = loc;
-                Log.d("Chris", "current location: " + location.getLatitude() + ", " + location.getLongitude());
                 Toast.makeText(activity, "Got location: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
                 dismissLocationUpdater();
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {
-                Log.d("Chris", "status changed");
             }
 
             public void onProviderEnabled(String provider) {
-                Log.d("Chris", "provider enabled");
             }
 
             public void onProviderDisabled(String provider) {
-                Log.d("Chris", "provider disabled");
             }
         };
     }

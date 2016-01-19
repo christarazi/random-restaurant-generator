@@ -29,7 +29,6 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         this.restaurant = res;
 
         this.savedListHolder = SavedListHolder.getInstance();
-        Log.d("Chris", "MainRestaurantCardAdapter() called with: " + "con = [" + con + "], res = [" + res + "]");
     }
 
     public void add(Restaurant res) {
@@ -51,7 +50,6 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
 
     @Override
     public RestaurantViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        Log.d("Chris", "onCreateViewHolder() called with: " + "parent = [" + parent + "], viewType = [" + viewType + "]");
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_main_restaurant_card, parent, false);
 
         return new RestaurantViewHolder(view);
@@ -59,8 +57,6 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
 
     @Override
     public void onBindViewHolder(RestaurantViewHolder holder, int position) {
-        Log.d("Chris", "onBindViewHolder() called with: " + "holder = [" + holder + "], position = [" + position + "]");
-
         Picasso.with(context).load(restaurant.getThumbnailURL()).into(holder.thumbnail);
         Picasso.with(context).load(restaurant.getRatingImageURL()).into(holder.ratingImage);
         holder.nameOfRestaurant.setText(restaurant.getName());
@@ -86,8 +82,6 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         public RestaurantViewHolder(View itemView) {
             super(itemView);
 
-            Log.d("Chris", "RestaurantViewHolder() called with: " + "itemView = [" + itemView + "]");
-
             nameOfRestaurant = (TextView) itemView.findViewById(R.id.name);
             ratingImage = (ImageView) itemView.findViewById(R.id.rating);
             thumbnail = (ImageView) itemView.findViewById(R.id.thumbnail);
@@ -108,7 +102,6 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
                     }
 
                     addToList(restaurant);
-                    Log.d("Chris", "added to saved list");
                 }
             });
         }

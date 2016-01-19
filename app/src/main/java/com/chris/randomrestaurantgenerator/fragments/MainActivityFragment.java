@@ -88,8 +88,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Log.d("Chris", "onCreate()");
     }
 
     @Override
@@ -97,8 +95,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                              Bundle savedInstanceState) {
 
         super.onCreateView(inflater, container, savedInstanceState);
-
-        Log.d("Chris", "onCreateView()");
 
         rootLayout = (RelativeLayout) inflater.inflate(R.layout.fragment_main, container, false);
         recyclerView = (RecyclerView) rootLayout.findViewById(R.id.recyclerView);
@@ -109,11 +105,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
         // https://code.google.com/p/gmaps-api-issues/issues/detail?id=6237#c9
         final Bundle mapViewSavedInstanceState = savedInstanceState != null ? savedInstanceState.getBundle("mapViewSaveState") : null;
-        Log.d("Chris", "savedInstanceState: " + savedInstanceState);
-        if (savedInstanceState != null) {
-            Log.d("Chris", "savedInstanceState.getBundle(\"mapViewSaveState\"): " + savedInstanceState.getBundle("mapViewSaveState"));
-        }
-        Log.d("Chris", "mapViewSavedInstanceState: " + mapViewSavedInstanceState);
         mapView.onCreate(mapViewSavedInstanceState);
 
         userLocationInfo = (EditText) rootLayout.findViewById(R.id.userLocationInfo);
@@ -127,8 +118,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
-
-                Log.d("Chris", "onSwiped() called with: " + "viewHolder = [" + viewHolder + "], direction = [" + direction + "]");
 
                 // If user has swiped left, perform a click on the Generate button.
                 if (direction == 4) {
@@ -157,14 +146,12 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Log.d("Chris", "onActivityCreated()");
-
         // Reset all cache for showcase id.
         //MaterialShowcaseView.resetAll(getContext());
 
         // A tutorial that displays only once explaining the input to the app.
         new MaterialShowcaseView.Builder(getActivity())
-                .setMaskColour(Color.rgb(129, 212, 250))
+                .setMaskColour(Color.rgb(0, 166, 237))
                 .setTarget(userLocationInfo)
                 .setDismissText("GOT IT")
                 .setContentText("Enter any zip code or city or address here, or click the GPS icon to use your current location.")
@@ -242,8 +229,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
 
-                Log.d("Chris", "generate has been clicked.");
-
                 // If the user doesn't wait on the task to complete, warn them it is still running
                 // so we can prevent a long stack of requests from piling up.
                 if (taskRunning) {
@@ -283,7 +268,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     // If the user is using entering their location, check to make sure they have entered one.
                     // Else, begin the AsyncTask.
                     if (userLocationInfo.getText().length() == 0) {
-                        Log.d("Chris", "userLocationInfo: " + userLocationInfo.getText());
 
                         AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
                         alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
@@ -308,45 +292,41 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     @Override
     public void onSaveInstanceState(Bundle outState) {
 
+        super.onSaveInstanceState(outState);
+
         // https://code.google.com/p/gmaps-api-issues/issues/detail?id=6237#c9
         final Bundle mapViewSaveState = new Bundle(outState);
         mapView.onSaveInstanceState(mapViewSaveState);
         outState.putBundle("mapViewSaveState", mapViewSaveState);
-
-        super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onPause() {
-        mapView.onPause();
         super.onPause();
-        Log.d("Chris", "onPause()");
+        mapView.onPause();
+
     }
 
     @Override
     public void onResume() {
-        mapView.onResume();
         super.onResume();
-        Log.d("Chris", "onResume()");
+        mapView.onResume();
     }
 
     @Override
     public void onDestroy() {
-        mapView.onDestroy();
         super.onDestroy();
-        Log.d("Chris", "onDestroy()");
+        mapView.onDestroy();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        Log.d("Chris", "onDestroyView()");
     }
 
     // Google Maps API callback for MapFragment.
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        Log.d("Chris", "onMapReady() called with: " + "googleMap = [" + googleMap + "]");
         map = googleMap;
     }
 
@@ -421,11 +401,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                 if (lat.equals("") || lon.equals("")) {
                     request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food&location=" + userInputStr + "&offset=" + startingOffset);
-                    Log.d("Chris", "request: " + "https://api.yelp.com/v2/search?term=food&location=" + userInputStr + "&offset=" + startingOffset);
                 } else {
                     request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food" +
-                            "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
-                    Log.d("Chris", "request: " + "https://api.yelp.com/v2/search?term=food" +
                             "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
                 }
 
@@ -436,8 +413,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 JSONObject mainJsonObject = null;
                 JSONArray jsonBusinessesArray = null;
 
-                Log.d("Chris", "doInBackground() called with: " + "params = [" + params + "]");
-                Log.d("Chris", "json: " + response.getBody());
                 mainJsonObject = new JSONObject(response.getBody());
                 jsonBusinessesArray = mainJsonObject.getJSONArray("businesses");
 
@@ -449,8 +424,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 }
 
                 int index = new Random().nextInt(length);
-                Log.d("Chris", "length: " + jsonBusinessesArray.length());
-                Log.d("Chris", "index: " + index);
 
                 // Convert a random restaurant from json to Restaurant object
                 return convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(index));
@@ -468,18 +441,16 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         // Set UI appropriate UI elements to display mRestaurant info.
         @Override
         protected void onPostExecute(Restaurant restaurant) {
+
+            super.onPostExecute(restaurant);
+
             if (restaurant == null) {
                 Toast.makeText(getActivity(), "Error during transmission. Either no restaurants were " +
                         "found in your area or an internet communication error occurred. Try again.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            super.onPostExecute(restaurant);
-
-            Log.d("Chris", "onPostExecute() called with: " + "restaurant = [" + restaurant + "]");
 
             currentRestaurant = restaurant;
-
-            Log.d("Chris", "GetJonTask returned: " + currentRestaurant);
 
             // If the RecyclerView has not been set yet, set it with the currentRestaurant.
             if (mainRestaurantCardAdapter == null) {
@@ -502,12 +473,10 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             // Signal the task as completed
             taskRunning = false;
 
-            Log.d("Chris", "onPostExecute() returned: void");
-
             // A tutorial that displays only once explaining the action that can be done on the restaurant card.
             ShowcaseConfig config = new ShowcaseConfig();
-            config.setDelay(250);
-            config.setMaskColor(Color.rgb(129, 212, 250));
+            config.setDelay(100);
+            config.setMaskColor(Color.rgb(0, 166, 237));
 
             MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), "2");
             sequence.setConfig(config);
@@ -569,8 +538,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 } catch (Exception ignored) {
                     deals = "";
                 }
-
-                Log.d("Chris", "deals: " + deals);
 
                 // Construct a new Restaurant object with all the info we gathered above and return it
                 Restaurant restaurant = new Restaurant(obj.getString("name"), (float) obj.getDouble("rating"),
