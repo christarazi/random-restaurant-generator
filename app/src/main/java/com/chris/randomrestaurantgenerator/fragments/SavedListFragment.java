@@ -15,10 +15,15 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.chris.randomrestaurantgenerator.R;
-import com.chris.randomrestaurantgenerator.models.MaybeListHolder;
+import com.chris.randomrestaurantgenerator.models.Restaurant;
+import com.chris.randomrestaurantgenerator.models.SavedListHolder;
 import com.chris.randomrestaurantgenerator.views.ListRestaurantCardAdapter;
 
-public class MaybeListFragment extends Fragment {
+/**
+ * A fragment containing the SavedListActivity.
+ * Responsible for displaying the restaurants the user has saved.
+ */
+public class SavedListFragment extends Fragment {
 
     LinearLayout rootLayout;
     RecyclerView listRecyclerView;
@@ -26,16 +31,27 @@ public class MaybeListFragment extends Fragment {
 
     ListRestaurantCardAdapter listRestaurantCardAdapter;
 
-    MaybeListHolder maybeListHolder;
+    SavedListHolder savedListHolder;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+
+        // http://developer.android.com/training/basics/activity-lifecycle/recreating.html
+        super.onCreate(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            savedListHolder.setSavedList(savedInstanceState.<Restaurant>getParcelableArrayList("savedList"));
+        }
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         super.onCreateView(inflater, container, savedInstanceState);
 
-        maybeListHolder = MaybeListHolder.getInstance();
+        savedListHolder = SavedListHolder.getInstance();
 
-        rootLayout = (LinearLayout) inflater.inflate(R.layout.fragment_maybe_list, container, false);
+        rootLayout = (LinearLayout) inflater.inflate(R.layout.fragment_saved_list, container, false);
         listRecyclerView = (RecyclerView) rootLayout.findViewById(R.id.listRecyclerView);
         listRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
@@ -60,7 +76,7 @@ public class MaybeListFragment extends Fragment {
 
                     // Open restaurant in Yelp.
                     startActivity(new Intent(Intent.ACTION_VIEW,
-                            Uri.parse(maybeListHolder.getMaybeList().get(viewHolder.getAdapterPosition()).getUrl())));
+                            Uri.parse(savedListHolder.getSavedList().get(viewHolder.getAdapterPosition()).getUrl())));
 
                     // We don't want to remove the list item if user wants to see it in Yelp.
                     // Tell the adapter to refresh so the item is can be visible again.
@@ -81,8 +97,8 @@ public class MaybeListFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
 
         // If the list is null or empty, we want to avoid any exceptions thrown from the
-        // RecyclerView Adapter. So, set TextView to inform the user no items have been added to the maybeList.
-        if (maybeListHolder.getMaybeList() == null || maybeListHolder.getMaybeList().isEmpty()) {
+        // RecyclerView Adapter. So, set TextView to inform the user no items have been added to the savedList.
+        if (savedListHolder.getSavedList() == null || savedListHolder.getSavedList().isEmpty()) {
             listRecyclerView.setVisibility(View.GONE);
             emptyListView.setVisibility(View.VISIBLE);
 
@@ -95,5 +111,14 @@ public class MaybeListFragment extends Fragment {
         listRestaurantCardAdapter = new ListRestaurantCardAdapter(getContext());
         listRecyclerView.setAdapter(listRestaurantCardAdapter);
 
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+
+        // http://developer.android.com/training/basics/activity-lifecycle/recreating.html
+        super.onSaveInstanceState(outState);
+
+        outState.putParcelableArrayList("savedList", savedListHolder.getSavedList());
     }
 }

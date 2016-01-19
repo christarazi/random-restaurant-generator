@@ -15,6 +15,10 @@ import android.widget.Toast;
 
 import static android.support.v4.content.ContextCompat.checkSelfPermission;
 
+/**
+ * A helper class to aid with keeping one single instance of the Location object and all the other
+ * periphery classes that go along with it.
+ */
 public class LocationProviderHelper {
 
     private Activity activity;
@@ -42,7 +46,7 @@ public class LocationProviderHelper {
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {
-                Log.d("Chris", ":status changed");
+                Log.d("Chris", "status changed");
             }
 
             public void onProviderEnabled(String provider) {

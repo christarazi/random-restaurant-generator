@@ -17,7 +17,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center_horizontal|center_vertical"
-        android:text="You don't have restaurants added to your Maybe List."
+        android:text="You don't have restaurants added to your Saved List."
         android:visibility="gone"/>
 
 </LinearLayout>

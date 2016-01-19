@@ -5,17 +5,13 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
-import com.chris.randomrestaurantgenerator.models.MaybeListHolder;
-
-public class MaybeListActivity extends AppCompatActivity {
-
-    MaybeListHolder maybeListHolder = MaybeListHolder.getInstance();
+public class SavedListActivity extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_maybe_list);
+        setContentView(R.layout.activity_saved_list);
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {

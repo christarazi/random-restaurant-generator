@@ -6,6 +6,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -29,6 +30,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.chris.randomrestaurantgenerator.MainActivity;
 import com.chris.randomrestaurantgenerator.R;
 import com.chris.randomrestaurantgenerator.managers.UnscrollableLinearLayoutManager;
 import com.chris.randomrestaurantgenerator.models.Restaurant;
@@ -55,6 +57,10 @@ import org.scribe.oauth.OAuthService;
 import java.util.ArrayList;
 import java.util.Random;
 
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
+import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
+
 /**
  * A fragment containing the main activity.
  * Responsible for displaying to the user a random restaurant based off their location  / zip code.
@@ -70,7 +76,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     MainRestaurantCardAdapter mainRestaurantCardAdapter;
 
     Restaurant currentRestaurant;
-    LocationProviderHelper helper;
+    LocationProviderHelper locationHelper;
 
     LinearLayout mapCardContainer;
     MapView mapView;
@@ -82,6 +88,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         Log.d("Chris", "onCreate()");
     }
 
@@ -99,7 +106,15 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
         mapCardContainer = (LinearLayout) rootLayout.findViewById(R.id.cardMapLayout);
         mapView = (MapView) rootLayout.findViewById(R.id.mapView);
-        mapView.onCreate(savedInstanceState);
+
+        // https://code.google.com/p/gmaps-api-issues/issues/detail?id=6237#c9
+        final Bundle mapViewSavedInstanceState = savedInstanceState != null ? savedInstanceState.getBundle("mapViewSaveState") : null;
+        Log.d("Chris", "savedInstanceState: " + savedInstanceState);
+        if (savedInstanceState != null) {
+            Log.d("Chris", "savedInstanceState.getBundle(\"mapViewSaveState\"): " + savedInstanceState.getBundle("mapViewSaveState"));
+        }
+        Log.d("Chris", "mapViewSavedInstanceState: " + mapViewSavedInstanceState);
+        mapView.onCreate(mapViewSavedInstanceState);
 
         userLocationInfo = (EditText) rootLayout.findViewById(R.id.userLocationInfo);
         generate = (Button) rootLayout.findViewById(R.id.generate);
@@ -125,7 +140,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 if (direction == 8) {
                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(currentRestaurant.getUrl())));
 
-                    // We don't want to remove therestaurantt here, so we add it back to the recyclerView.
+                    // We don't want to remove the restaurant here, so we add it back to the recyclerView.
                     mainRestaurantCardAdapter.remove();
                     mainRestaurantCardAdapter.add(currentRestaurant);
                 }
@@ -144,10 +159,23 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
         Log.d("Chris", "onActivityCreated()");
 
+        // Reset all cache for showcase id.
+        //MaterialShowcaseView.resetAll(getContext());
+
+        // A tutorial that displays only once explaining the input to the app.
+        new MaterialShowcaseView.Builder(getActivity())
+                .setMaskColour(Color.rgb(129, 212, 250))
+                .setTarget(userLocationInfo)
+                .setDismissText("GOT IT")
+                .setContentText("Enter any zip code or city or address here, or click the GPS icon to use your current location.")
+                .setDelay(500)
+                .singleUse("1")
+                .show();
+
         // Get Google Map using OnMapReadyCallback
         mapView.getMapAsync(this);
 
-        // OnTouchListener for the Location icon in the EditText box.
+        // OnTouchListener for the GPS icon in the EditText box.
         userLocationInfo.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -158,6 +186,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                 if (event.getAction() == MotionEvent.ACTION_UP) {
 
+                    // Increase the clickable boundary for the GPS icon to make it easier to tap on.
                     int clickBoundary = userLocationInfo.getRight() - userLocationInfo.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width() - 45;
 
                     // If the user clicks on the Location icon, enable Location feature.
@@ -171,14 +200,14 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
-                                helper.dismissLocationUpdater();
+                                locationHelper.dismissLocationUpdater();
                                 useGPS = false;
                             }
                         });
                         dialog.show();
 
-                        helper = new LocationProviderHelper(getActivity(), dialog);
-                        helper.requestLocation();
+                        locationHelper = new LocationProviderHelper(getActivity(), dialog);
+                        locationHelper.requestLocation();
 
                         useGPS = true;
 
@@ -188,7 +217,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         // If the user touches anywhere else, then we need to make the map
                         // invisible to prevent the keyboard from pushing up.
                         mapCardContainer.setVisibility(View.INVISIBLE);
-                        //Toast.makeText(getContext(), "Touched", Toast.LENGTH_SHORT).show();
                     }
                 }
                 return false;
@@ -216,9 +244,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                 Log.d("Chris", "generate has been clicked.");
 
-                // Send the maybeList to the interface so that it can be sent to the maybe list fragment.
-                //maybeListCommunicator.sendList(maybeList);
-
                 // If the user doesn't wait on the task to complete, warn them it is still running
                 // so we can prevent a long stack of requests from piling up.
                 if (taskRunning) {
@@ -233,7 +258,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                     // If the user is using location, check to make sure the location is not null before beginning.
                     // Else, begin the AsyncTask.
-                    Location location = helper.getLocation();
+                    Location location = locationHelper.getLocation();
                     if (location == null) {
                         AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
                         alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
@@ -247,17 +272,18 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                                 "Acquiring GPS signal may take up to a minute on some devices.");
                         alert.show();
                     } else {
-                        userLocationInfo.setText(String.format("%s, %s", location.getLatitude(), location.getLongitude()));
+                        //userLocationInfo.setText(String.format("%s, %s", location.getLatitude(), location.getLongitude()));
+                        userLocationInfo.setText("Current Location");
                         new GetJsonData().execute(String.valueOf(userLocationInfo.getText()),
                                 String.valueOf(location.getLatitude()),
                                 String.valueOf(location.getLongitude()));
                     }
                 } else {
 
-                    // If the user is using zip code, check to make sure they have entered one.
+                    // If the user is using entering their location, check to make sure they have entered one.
                     // Else, begin the AsyncTask.
                     if (userLocationInfo.getText().length() == 0) {
-                        Log.d("Chris", "zip: " + userLocationInfo.getText());
+                        Log.d("Chris", "userLocationInfo: " + userLocationInfo.getText());
 
                         AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
                         alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
@@ -267,7 +293,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                             }
                         });
                         alert.setTitle("Error");
-                        alert.setMessage("Please enter your zip code.");
+                        alert.setMessage("Please enter a valid address, city, zip code, or use GPS by clicking the icon.");
                         alert.show();
                     } else {
                         new GetJsonData().execute(String.valueOf(userLocationInfo.getText()));
@@ -277,6 +303,17 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         });
 
 
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+
+        // https://code.google.com/p/gmaps-api-issues/issues/detail?id=6237#c9
+        final Bundle mapViewSaveState = new Bundle(outState);
+        mapView.onSaveInstanceState(mapViewSaveState);
+        outState.putBundle("mapViewSaveState", mapViewSaveState);
+
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -334,6 +371,11 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         }
     }
 
+    /**
+     * Function to hide the keyboard.
+     *
+     * @param activity: current Activity.
+     */
     private void hideSoftKeyboard(Activity activity) {
         InputMethodManager inputMethodManager = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
         inputMethodManager.hideSoftInputFromWindow(activity.getCurrentFocus().getWindowToken(), 0);
@@ -348,51 +390,52 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             // Signal the task is running
             taskRunning = true;
 
-            // Build OAuth request
-            OAuthService service = new ServiceBuilder().provider(TwoStepOAuth.class).apiKey(TwoStepOAuth.getConsumerKey())
-                    .apiSecret(TwoStepOAuth.getConsumerSecret()).build();
-
-            Token accessToken = new Token(TwoStepOAuth.getToken(), TwoStepOAuth.getTokenSecret());
-
-            // Check for parameters so we can send the appropriate request based on user input.
-            String lat = "";
-            String lon = "";
-            String userInputStr = params[0];
-
-            // If the user entered some input, make sure to encode all spaces and "+" for URL query.
-            if (userInputStr.length() != 0) {
-                userInputStr = userInputStr.replaceAll(" ", "+");
-            }
-
-            // If we have 3 parameters, then the user selected location and we must grab the lat / long.
-            if (params.length == 3) {
-                lat = params[1];
-                lon = params[2];
-            }
-
-            OAuthRequest request;
-            int startingOffset;
-
-            // Get a random offset for Yelp results
-            startingOffset = new Random().nextInt(2) * 20;
-
-            if (lat.equals("") || lon.equals("")) {
-                request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food&location=" + userInputStr + "&offset=" + startingOffset);
-                Log.d("Chris", "request: " + "https://api.yelp.com/v2/search?term=food&location=" + userInputStr + "&offset=" + startingOffset);
-            } else {
-                request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food" +
-                        "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
-                Log.d("Chris", "request: " + "https://api.yelp.com/v2/search?term=food" +
-                        "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
-            }
-
-            service.signRequest(accessToken, request);
-            Response response = request.send();
-
-            // Parsing JSON response
-            JSONObject mainJsonObject = null;
-            JSONArray jsonBusinessesArray = null;
             try {
+                // Build OAuth request
+                OAuthService service = new ServiceBuilder().provider(TwoStepOAuth.class).apiKey(TwoStepOAuth.getConsumerKey())
+                        .apiSecret(TwoStepOAuth.getConsumerSecret()).build();
+
+                Token accessToken = new Token(TwoStepOAuth.getToken(), TwoStepOAuth.getTokenSecret());
+
+                // Check for parameters so we can send the appropriate request based on user input.
+                String lat = "";
+                String lon = "";
+                String userInputStr = params[0];
+
+                // If the user entered some input, make sure to encode all spaces and "+" for URL query.
+                if (userInputStr.length() != 0) {
+                    userInputStr = userInputStr.replaceAll(" ", "+");
+                }
+
+                // If we have 3 parameters, then the user selected location and we must grab the lat / long.
+                if (params.length == 3) {
+                    lat = params[1];
+                    lon = params[2];
+                }
+
+                OAuthRequest request;
+                int startingOffset;
+
+                // Get a random offset for Yelp results
+                startingOffset = new Random().nextInt(2) * 20;
+
+                if (lat.equals("") || lon.equals("")) {
+                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food&location=" + userInputStr + "&offset=" + startingOffset);
+                    Log.d("Chris", "request: " + "https://api.yelp.com/v2/search?term=food&location=" + userInputStr + "&offset=" + startingOffset);
+                } else {
+                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food" +
+                            "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
+                    Log.d("Chris", "request: " + "https://api.yelp.com/v2/search?term=food" +
+                            "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
+                }
+
+                service.signRequest(accessToken, request);
+                Response response = request.send();
+
+                // Parsing JSON response
+                JSONObject mainJsonObject = null;
+                JSONArray jsonBusinessesArray = null;
+
                 Log.d("Chris", "doInBackground() called with: " + "params = [" + params + "]");
                 Log.d("Chris", "json: " + response.getBody());
                 mainJsonObject = new JSONObject(response.getBody());
@@ -400,7 +443,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                 int length = jsonBusinessesArray.length();
 
-                // This occurs if an network communication error occurs or if no restaurants were found.
+                // This occurs if a network communication error occurs or if no restaurants were found.
                 if (length <= 0) {
                     return null;
                 }
@@ -412,7 +455,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 // Convert a random restaurant from json to Restaurant object
                 return convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(index));
 
-            } catch (JSONException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
 
                 // Signal the task has finished (failed task is still a finished task)
@@ -460,9 +503,31 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             taskRunning = false;
 
             Log.d("Chris", "onPostExecute() returned: void");
+
+            // A tutorial that displays only once explaining the action that can be done on the restaurant card.
+            ShowcaseConfig config = new ShowcaseConfig();
+            config.setDelay(250);
+            config.setMaskColor(Color.rgb(129, 212, 250));
+
+            MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), "2");
+            sequence.setConfig(config);
+
+            sequence.addSequenceItem(recyclerView,
+                    "Swipe left to dismiss. Swipe right to open in Yelp. Tap bookmark button to save it for later.",
+                    "GOT IT");
+
+            sequence.addSequenceItem(((MainActivity) getActivity()).getMenuItemView(),
+                    "Tap here to view your saved list.", "GOT IT");
+
+            sequence.start();
         }
 
-        // Given a JSONObject, convert it to a Restaurant object that encapsulates a mRestaurant from Yelp.
+        /**
+         * Convert JSON to a Restaurant object that encapsulates a restaurant from Yelp.
+         *
+         * @param obj: JSONObejct that holds all restaurant info.
+         * @return Restaurant or null if an error occurs.
+         */
         private Restaurant convertJSONToRestaurant(JSONObject obj) {
             try {
 

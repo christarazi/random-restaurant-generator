@@ -1,23 +1,15 @@
 package com.chris.randomrestaurantgenerator.models;
 
-
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.ArrayList;
 
+/**
+ * This class is responsible for encapsulating a restaurant from Yelp.
+ */
 public class Restaurant implements Parcelable {
-    public static final Creator<Restaurant> CREATOR = new Creator<Restaurant>() {
-        @Override
-        public Restaurant createFromParcel(Parcel in) {
-            return new Restaurant(in);
-        }
 
-        @Override
-        public Restaurant[] newArray(int size) {
-            return new Restaurant[size];
-        }
-    };
     private String name;
     private float rating;
     private String ratingImageURL;
@@ -48,32 +40,6 @@ public class Restaurant implements Parcelable {
         this.deal = deal;
         this.lat = lat;
         this.lon = lon;
-    }
-
-    protected Restaurant(Parcel in) {
-        name = in.readString();
-        rating = in.readFloat();
-        ratingImageURL = in.readString();
-        thumbnailURL = in.readString();
-        reviewCount = in.readInt();
-        url = in.readString();
-        if (in.readByte() == 0x01) {
-            categories = new ArrayList<String>();
-            in.readList(categories, String.class.getClassLoader());
-        } else {
-            categories = null;
-        }
-        phoneNumber = in.readString();
-        isClosed = in.readByte() != 0x00;
-        if (in.readByte() == 0x01) {
-            address = new ArrayList<String>();
-            in.readList(address, String.class.getClassLoader());
-        } else {
-            address = null;
-        }
-        deal = in.readString();
-        lat = in.readDouble();
-        lon = in.readDouble();
     }
 
     public String getName() {
@@ -128,6 +94,32 @@ public class Restaurant implements Parcelable {
         return lon;
     }
 
+    protected Restaurant(Parcel in) {
+        name = in.readString();
+        rating = in.readFloat();
+        ratingImageURL = in.readString();
+        thumbnailURL = in.readString();
+        reviewCount = in.readInt();
+        url = in.readString();
+        if (in.readByte() == 0x01) {
+            categories = new ArrayList<String>();
+            in.readList(categories, String.class.getClassLoader());
+        } else {
+            categories = null;
+        }
+        phoneNumber = in.readString();
+        isClosed = in.readByte() != 0x00;
+        if (in.readByte() == 0x01) {
+            address = new ArrayList<String>();
+            in.readList(address, String.class.getClassLoader());
+        } else {
+            address = null;
+        }
+        deal = in.readString();
+        lat = in.readDouble();
+        lon = in.readDouble();
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -159,4 +151,17 @@ public class Restaurant implements Parcelable {
         dest.writeDouble(lat);
         dest.writeDouble(lon);
     }
+
+    @SuppressWarnings("unused")
+    public static final Parcelable.Creator<Restaurant> CREATOR = new Parcelable.Creator<Restaurant>() {
+        @Override
+        public Restaurant createFromParcel(Parcel in) {
+            return new Restaurant(in);
+        }
+
+        @Override
+        public Restaurant[] newArray(int size) {
+            return new Restaurant[size];
+        }
+    };
 }

@@ -8,23 +8,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.chris.randomrestaurantgenerator.R;
-import com.chris.randomrestaurantgenerator.models.MaybeListHolder;
 import com.chris.randomrestaurantgenerator.models.Restaurant;
+import com.chris.randomrestaurantgenerator.models.SavedListHolder;
 import com.squareup.picasso.Picasso;
 
+/**
+ * A RecyclerView Adapter for the main fragment. Only displays one card at a time, rather than a list.
+ */
 public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaurantCardAdapter.RestaurantViewHolder> {
 
     Context context;
     Restaurant restaurant;
-    MaybeListHolder maybeListHolder;
+    SavedListHolder savedListHolder;
 
     public MainRestaurantCardAdapter(Context con, Restaurant res) {
         this.context = con;
         this.restaurant = res;
 
-        this.maybeListHolder = MaybeListHolder.getInstance();
+        this.savedListHolder = SavedListHolder.getInstance();
         Log.d("Chris", "MainRestaurantCardAdapter() called with: " + "con = [" + con + "], res = [" + res + "]");
     }
 
@@ -37,9 +41,12 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         notifyItemRemoved(0);
     }
 
-    // Function to use the interface to add restaurant to maybeList.
+    /**
+     * Helper function to add a restaurant to the savedList.
+     * @param res: the restaurant object we want to add.
+     */
     private void addToList(Restaurant res) {
-        maybeListHolder.getMaybeList().add(res);
+        savedListHolder.getSavedList().add(res);
     }
 
     @Override
@@ -74,7 +81,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         TextView categories;
         TextView deals;
 
-        ImageView addToMaybeList;
+        ImageView addToSavedList;
 
         public RestaurantViewHolder(View itemView) {
             super(itemView);
@@ -87,14 +94,21 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
             categories = (TextView) itemView.findViewById(R.id.categories);
             deals = (TextView) itemView.findViewById(R.id.deals);
 
-            addToMaybeList = (ImageView) itemView.findViewById(R.id.addToMaybeList);
+            addToSavedList = (ImageView) itemView.findViewById(R.id.addToSavedList);
 
-            // Adds current restaurant to the maybe list on click.
-            addToMaybeList.setOnClickListener(new View.OnClickListener() {
+            // Adds current restaurant to the saved list on click.
+            addToSavedList.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+
+                    // If the user tries to save the same restaurant more than once, alert them.
+                    if (savedListHolder.getSavedList().contains(restaurant)) {
+                        Toast.makeText(context, "You have already saved this restaurant.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     addToList(restaurant);
-                    Log.d("Chris", "added to maybe list");
+                    Log.d("Chris", "added to saved list");
                 }
             });
         }

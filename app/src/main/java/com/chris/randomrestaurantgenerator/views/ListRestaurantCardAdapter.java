@@ -10,18 +10,21 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.chris.randomrestaurantgenerator.R;
-import com.chris.randomrestaurantgenerator.models.MaybeListHolder;
 import com.chris.randomrestaurantgenerator.models.Restaurant;
+import com.chris.randomrestaurantgenerator.models.SavedListHolder;
 import com.squareup.picasso.Picasso;
 
+/**
+ * A RecyclerView Adapter for the savedList.
+ */
 public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaurantCardAdapter.RestaurantViewHolder> {
 
     Context context;
-    MaybeListHolder maybeListHolder;
+    SavedListHolder savedListHolder;
 
     public ListRestaurantCardAdapter(Context con) {
         this.context = con;
-        this.maybeListHolder = MaybeListHolder.getInstance();
+        this.savedListHolder = SavedListHolder.getInstance();
     }
 
     @Override
@@ -32,14 +35,14 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
     }
 
     public void remove(int index) {
-        maybeListHolder.getMaybeList().remove(index);
+        savedListHolder.getSavedList().remove(index);
         notifyItemRemoved(index);
     }
 
     @Override
     public void onBindViewHolder(RestaurantViewHolder holder, int position) {
 
-        Restaurant restaurant = maybeListHolder.getMaybeList().get(position);
+        Restaurant restaurant = savedListHolder.getSavedList().get(position);
 
         Log.d("Chris", "onBindViewHolder() from List with restaurant: " + restaurant.toString());
 
@@ -52,7 +55,7 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
 
     @Override
     public int getItemCount() {
-        return maybeListHolder.getMaybeList().size();
+        return savedListHolder.getSavedList().size();
     }
 
     public class RestaurantViewHolder extends RecyclerView.ViewHolder {

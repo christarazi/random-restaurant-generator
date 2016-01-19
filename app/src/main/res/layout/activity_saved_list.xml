@@ -6,12 +6,11 @@
     android:layout_height="match_parent">
 
     <fragment
-        android:id="@+id/maybeListFragment"
+        android:id="@+id/savedListFragment"
         android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:name="com.chris.randomrestaurantgenerator.fragments.MaybeListFragment"
-        tools:layout="@layout/fragment_maybe_list"
-        xmlns:android="http://schemas.android.com/apk/res/android">
+        android:name="com.chris.randomrestaurantgenerator.fragments.SavedListFragment"
+        tools:layout="@layout/fragment_saved_list">
     </fragment>
 
 </LinearLayout>
