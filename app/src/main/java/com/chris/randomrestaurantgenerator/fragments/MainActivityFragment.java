@@ -157,7 +157,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         rootLayout.requestFocus();
 
         // Reset all cache for showcase id.
-        MaterialShowcaseView.resetAll(getContext());
+        //MaterialShowcaseView.resetAll(getContext());
 
         // A tutorial that displays only once explaining the input to the app.
         MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), "1");
