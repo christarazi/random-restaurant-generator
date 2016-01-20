@@ -1,7 +1,5 @@
 package com.chris.randomrestaurantgenerator;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -11,6 +9,9 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+
+import com.chris.randomrestaurantgenerator.fragments.MainActivityFragment;
+import com.chris.randomrestaurantgenerator.utils.LocationProviderHelper;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -60,20 +61,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
-            case 0: {
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            case LocationProviderHelper.MY_LOCATION_REQUEST_CODE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                } else {
-                    AlertDialog.Builder dialog = new AlertDialog.Builder(getApplicationContext());
-                    dialog.setMessage("Please enter your zip code because location services could not be used.");
-                    dialog.setNeutralButton("OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    });
-                    dialog.setTitle("Location permissions denied");
-                    dialog.create();
+                    MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
+                            .findFragmentById(R.id.mainFragment);
+                    fragment.reactToPermissionsCallback(true);
+                }
+                else {
+
+
+                    MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
+                            .findFragmentById(R.id.mainFragment);
+                    fragment.reactToPermissionsCallback(false);
                 }
             }
         }

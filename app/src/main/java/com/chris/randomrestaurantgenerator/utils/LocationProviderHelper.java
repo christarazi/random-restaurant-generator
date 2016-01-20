@@ -4,13 +4,13 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
 import static android.support.v4.content.ContextCompat.checkSelfPermission;
@@ -21,15 +21,18 @@ import static android.support.v4.content.ContextCompat.checkSelfPermission;
  */
 public class LocationProviderHelper {
 
+    public static final int MY_LOCATION_REQUEST_CODE = 1;
     private Activity activity;
     private LocationManager locationManager;
     private LocationListener locationListener;
     private Location location;
+    private ProgressDialog dialog;
     private boolean locationChanged = false;
 
-    public LocationProviderHelper(final Activity act, final ProgressDialog dialog) {
+    public LocationProviderHelper(final Activity act) {
 
         this.activity = act;
+        this.dialog = new ProgressDialog(this.activity);
 
         // Acquire a reference to the system Location Manager
         locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
@@ -75,19 +78,35 @@ public class LocationProviderHelper {
         if (checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                activity.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+                activity.requestPermissions(new String[]{Manifest.permission_group.LOCATION}, MY_LOCATION_REQUEST_CODE);
             }
         }
-        this.locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this.getLocationListener());
+        else {
+            this.locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this.getLocationListener());
+
+            dialog.setMessage("Getting location...");
+            dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            dialog.setCanceledOnTouchOutside(false);
+            dialog.setCancelable(false);
+            dialog.setButton(ProgressDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    dismissLocationUpdater();
+                }
+            });
+            dialog.show();
+        }
     }
 
     public void dismissLocationUpdater() {
-        if (checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+        if (checkSelfPermission(activity, Manifest.permission_group.LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                activity.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+                activity.requestPermissions(new String[]{Manifest.permission_group.LOCATION}, MY_LOCATION_REQUEST_CODE);
             }
         }
-        this.locationManager.removeUpdates(locationListener);
+        else
+            this.locationManager.removeUpdates(locationListener);
     }
 }
