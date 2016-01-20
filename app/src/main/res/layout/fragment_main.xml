@@ -20,15 +20,32 @@
         android:textSize="@dimen/_13sdp"
         android:singleLine="true"
         android:paddingTop="@dimen/_2sdp"
+        android:layout_marginLeft="@dimen/_6sdp"
+        android:layout_marginRight="@dimen/_6sdp"
+        android:background="?editTextBackground"
+        android:imeOptions="actionNext"
+        android:ems="10"
+        android:hint="Enter zip, address, city, or use Location"
+        android:drawableRight="@drawable/crosshairs_gps" />
+
+    <EditText
+        android:id="@+id/filter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:gravity="center_vertical|start"
+        android:minHeight="@dimen/_46sdp"
+        android:textSize="@dimen/_12sdp"
+        android:singleLine="true"
         android:paddingBottom="@dimen/_2sdp"
         android:layout_marginLeft="@dimen/_6sdp"
         android:layout_marginRight="@dimen/_6sdp"
         android:background="?editTextBackground"
         android:imeOptions="actionDone"
         android:ems="10"
-        android:hint="Enter zip, address, city, or use Location"
-        android:drawableRight="@drawable/crosshairs_gps" />
-
+        android:hint="(Optional) Enter any filter, e.g. vegetarian, bbq, sushi"
+        android:layout_below="@+id/userLocationInfo"
+        android:paddingTop="@dimen/_2sdp" />
 
     <android.support.v7.widget.AppCompatButton
         android:id="@+id/generate"
@@ -51,7 +68,7 @@
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_120sdp"
-        android:layout_below="@+id/userLocationInfo">
+        android:layout_below="@+id/filter">
     </android.support.v7.widget.RecyclerView>
 
     <LinearLayout

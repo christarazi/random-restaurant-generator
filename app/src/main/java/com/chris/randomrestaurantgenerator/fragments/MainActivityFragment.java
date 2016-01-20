@@ -17,6 +17,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -63,6 +64,8 @@ import java.util.Random;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
+import uk.co.deanwild.materialshowcaseview.shape.CircleShape;
+import uk.co.deanwild.materialshowcaseview.shape.RectangleShape;
 
 /**
  * A fragment containing the main activity.
@@ -71,6 +74,7 @@ import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
 public class MainActivityFragment extends Fragment implements OnMapReadyCallback {
 
     EditText userLocationInfo;
+    EditText filterBox;
     Button generate;
 
     RelativeLayout rootLayout;
@@ -111,6 +115,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         mapView.onCreate(mapViewSavedInstanceState);
 
         userLocationInfo = (EditText) rootLayout.findViewById(R.id.userLocationInfo);
+        filterBox = (EditText) rootLayout.findViewById(R.id.filter);
         generate = (Button) rootLayout.findViewById(R.id.generate);
 
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
@@ -149,18 +154,26 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        rootLayout.requestFocus();
+
         // Reset all cache for showcase id.
-        //MaterialShowcaseView.resetAll(getContext());
+        MaterialShowcaseView.resetAll(getContext());
 
         // A tutorial that displays only once explaining the input to the app.
-        new MaterialShowcaseView.Builder(getActivity())
-                .setMaskColour(Color.rgb(0, 166, 237))
-                .setTarget(userLocationInfo)
-                .setDismissText("GOT IT")
-                .setContentText("Enter any zip code or city or address here, or click the GPS icon to use your current location.")
-                .setDelay(500)
-                .singleUse("1")
-                .show();
+        MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), "1");
+        ShowcaseConfig config = new ShowcaseConfig();
+        config.setDelay(250);
+        sequence.setConfig(config);
+
+        sequence.addSequenceItem(buildShowcaseView(userLocationInfo, new RectangleShape(0, 0),
+                "Enter any zip code or city or address here, or click the GPS icon to use your current location."
+        ));
+
+        sequence.addSequenceItem(buildShowcaseView(filterBox, new RectangleShape(0, 0),
+                "Filter your results if you're in the mood for something specific."
+        ));
+
+        sequence.start();
 
         // Get Google Map using OnMapReadyCallback
         mapView.getMapAsync(this);
@@ -199,6 +212,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         locationHelper = new LocationProviderHelper(getActivity(), dialog);
                         locationHelper.requestLocation();
 
+                        userLocationInfo.setText("Current Location");
+
                         useGPS = true;
 
                         return true;
@@ -214,7 +229,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         });
 
         // Listener for when the user clicks done on keyboard after their input.
-        userLocationInfo.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        filterBox.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -260,9 +275,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                                 "Acquiring GPS signal may take up to a minute on some devices.");
                         alert.show();
                     } else {
-                        //userLocationInfo.setText(String.format("%s, %s", location.getLatitude(), location.getLongitude()));
-                        userLocationInfo.setText("Current Location");
                         new GetJsonData().execute(String.valueOf(userLocationInfo.getText()),
+                                String.valueOf(filterBox.getText()),
                                 String.valueOf(location.getLatitude()),
                                 String.valueOf(location.getLongitude()));
                     }
@@ -283,7 +297,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         alert.setMessage("Please enter a valid address, city, zip code, or use GPS by clicking the icon.");
                         alert.show();
                     } else {
-                        new GetJsonData().execute(String.valueOf(userLocationInfo.getText()));
+                        new GetJsonData().execute(String.valueOf(userLocationInfo.getText()), String.valueOf(filterBox.getText()));
                     }
                 }
             }
@@ -364,6 +378,22 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         inputMethodManager.hideSoftInputFromWindow(activity.getCurrentFocus().getWindowToken(), 0);
     }
 
+    /**
+     * Helper function to build a custom ShowcaseView for a sequence.
+     * @param target: the target view that will be highlighted
+     * @param shape: the type of shape
+     * @param contentText: the text to be displayed
+     */
+    private MaterialShowcaseView buildShowcaseView(View target, uk.co.deanwild.materialshowcaseview.shape.Shape shape, String contentText) {
+        return new MaterialShowcaseView.Builder(getActivity())
+                .setTarget(target)
+                .setShape(shape)
+                .setMaskColour(Color.rgb(0, 166, 237))
+                .setContentText(contentText)
+                .setDismissText("GOT IT")
+                .build();
+    }
+
     // Async task that connects to Yelp's API and queries for restaurants based on location / zip code.
     public class GetJsonData extends AsyncTask<String, Void, Restaurant> {
 
@@ -384,14 +414,28 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 String lat = "";
                 String lon = "";
                 String userInputStr = params[0];
+                String userFilterStr = params[1];
 
                 // If the user entered some input, make sure to encode all spaces and "+" for URL query.
                 if (userInputStr.length() != 0) {
                     userInputStr = userInputStr.replaceAll(" ", "+");
                 }
 
-                // If we have 3 parameters, then the user selected location and we must grab the lat / long.
-                if (params.length == 3) {
+                // If the user entered a filter, make sure to encode all spaces and "+" for URL query.
+                if (userFilterStr.length() != 0) {
+                    userFilterStr = userFilterStr.replaceAll(" ", "+");
+
+                    // Add Yelp API query verb.
+                    userFilterStr = String.format("term=%s", userFilterStr);
+                }
+                else {
+
+                    // Default search term.
+                    userFilterStr = "term=food";
+                }
+
+                // If we have 4 parameters, then the user selected location and we must grab the lat / long.
+                if (params.length == 4) {
                     lat = params[1];
                     lon = params[2];
                 }
@@ -403,10 +447,17 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 startingOffset = new Random().nextInt(2) * 20;
 
                 if (useGPS) {
-                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food" +
+                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + userFilterStr +
+                            "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
+
+                    Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + userFilterStr +
                             "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
                 } else {
-                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?term=food&location=" + userInputStr + "&offset=" + startingOffset);
+                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + userFilterStr +
+                            "&location=" + userInputStr + "&offset=" + startingOffset);
+
+                    Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + userFilterStr +
+                            "&location=" + userInputStr + "&offset=" + startingOffset);
                 }
 
                 service.signRequest(accessToken, request);
@@ -477,19 +528,16 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             taskRunning = false;
 
             // A tutorial that displays only once explaining the action that can be done on the restaurant card.
+            MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), "2");
             ShowcaseConfig config = new ShowcaseConfig();
             config.setDelay(100);
-            config.setMaskColor(Color.rgb(0, 166, 237));
-
-            MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), "2");
             sequence.setConfig(config);
 
-            sequence.addSequenceItem(recyclerView,
-                    "Swipe left to dismiss. Swipe right to open in Yelp. Tap bookmark button to save it for later.",
-                    "GOT IT");
+            sequence.addSequenceItem(buildShowcaseView(recyclerView, new RectangleShape(0, 0),
+                    "Swipe left to dismiss. Swipe right to open in Yelp. Tap bookmark button to save it for later."));
 
-            sequence.addSequenceItem(((MainActivity) getActivity()).getMenuItemView(),
-                    "Tap here to view your saved list.", "GOT IT");
+            sequence.addSequenceItem(buildShowcaseView(((MainActivity) getActivity()).getMenuItemView(),
+                    new CircleShape(), "Tap here to view your saved list."));
 
             sequence.start();
         }
