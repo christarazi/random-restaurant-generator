@@ -100,7 +100,7 @@ public class LocationProviderHelper {
     }
 
     public void dismissLocationUpdater() {
-        if (checkSelfPermission(activity, Manifest.permission_group.LOCATION) != PackageManager.PERMISSION_GRANTED &&
+        if (checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 activity.requestPermissions(new String[]{Manifest.permission_group.LOCATION}, MY_LOCATION_REQUEST_CODE);
