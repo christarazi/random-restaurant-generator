@@ -10,7 +10,7 @@
     android:layout_marginTop="@dimen/_4sdp"
     map:contentPadding="@dimen/_4sdp"
     map:cardCornerRadius="@dimen/_2sdp"
-    map:cardElevation="@dimen/_4sdp">
+    map:cardElevation="2dp">
 
     <RelativeLayout
         android:layout_width="match_parent"

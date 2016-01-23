@@ -10,65 +10,74 @@
     tools:context=".MainActivityFragment"
     tools:showIn="@layout/activity_main">
 
-    <EditText
-        android:id="@+id/userLocationInfo"
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/tilUserInfo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:gravity="center_vertical|start"
-        android:minHeight="@dimen/_46sdp"
-        android:textSize="@dimen/_13sdp"
-        android:singleLine="true"
-        android:paddingTop="@dimen/_2sdp"
-        android:layout_marginLeft="@dimen/_6sdp"
-        android:layout_marginRight="@dimen/_6sdp"
-        android:background="?editTextBackground"
-        android:imeOptions="actionNext"
-        android:ems="10"
-        android:hint="Enter zip, address, city, or use Location"
-        android:drawableRight="@drawable/crosshairs_gps" />
+        android:layout_marginTop="@dimen/_6sdp">
 
-    <EditText
-        android:id="@+id/filter"
+        <EditText
+            android:id="@+id/userLocationInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="@dimen/_6sdp"
+            android:layout_marginRight="@dimen/_6sdp"
+            android:background="?editTextBackground"
+            android:drawableRight="@drawable/crosshairs_gps"
+            android:gravity="center_vertical|start"
+            android:hint="Enter zip, address, city, or use Location"
+            android:imeOptions="actionNext"
+            android:singleLine="true"
+            android:textSize="@dimen/_13sdp" />
+
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/tilUserFilter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:gravity="center_vertical|start"
-        android:minHeight="@dimen/_46sdp"
-        android:textSize="@dimen/_12sdp"
-        android:singleLine="true"
-        android:paddingBottom="@dimen/_2sdp"
-        android:layout_marginLeft="@dimen/_6sdp"
-        android:layout_marginRight="@dimen/_6sdp"
-        android:background="?editTextBackground"
-        android:imeOptions="actionDone"
-        android:ems="10"
-        android:hint="(Optional) Enter any filter, e.g. vegetarian, bbq, sushi"
-        android:layout_below="@+id/userLocationInfo"
-        android:paddingTop="@dimen/_2sdp" />
+        android:layout_below="@+id/tilUserInfo">
+
+        <EditText
+            android:id="@+id/filter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="@dimen/_6sdp"
+            android:layout_marginRight="@dimen/_6sdp"
+            android:background="?editTextBackground"
+            android:gravity="center_vertical|start"
+            android:hint="(Optional) Enter any filter, e.g. vegetarian, bbq, sushi"
+            android:imeOptions="actionDone"
+            android:singleLine="true"
+            android:textSize="@dimen/_12sdp" />
+
+    </android.support.design.widget.TextInputLayout>
 
     <android.support.v7.widget.AppCompatButton
         android:id="@+id/generate"
+        style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="match_parent"
         android:layout_height="46dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginTop="@dimen/_4sdp"
-        android:text="GENERATE"
-        android:textSize="@dimen/_16sdp"
-        android:textColor="#FFFFFF"
         android:background="#F6511D"
         android:padding="0dp"
-        android:paddingRight="@dimen/_40sdp"
         android:paddingLeft="@dimen/_40sdp"
-        style="@style/Widget.AppCompat.Button.Colored"/>
+        android:paddingRight="@dimen/_40sdp"
+        android:text="GENERATE"
+        android:textColor="#FFFFFF"
+        android:textSize="@dimen/_16sdp" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_120sdp"
-        android:layout_below="@+id/filter">
+        android:layout_below="@+id/tilUserFilter">
+
     </android.support.v7.widget.RecyclerView>
 
     <LinearLayout
@@ -88,7 +97,7 @@
             android:layout_marginRight="@dimen/_8sdp"
             android:layout_marginTop="@dimen/_4sdp"
             map:cardCornerRadius="@dimen/_2sdp"
-            map:cardElevation="@dimen/_4sdp">
+            map:cardElevation="2dp">
 
             <com.google.android.gms.maps.MapView
                 android:id="@+id/mapView"
