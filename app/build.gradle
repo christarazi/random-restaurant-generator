@@ -15,6 +15,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
             // http://programmers.stackexchange.com/a/285309
             buildConfigField("String", "API_CONSUMER_KEY", "\"" + CONSUMER_KEY +"\"")
             buildConfigField("String", "API_CONSUMER_SECRET", "\"" + CONSUMER_SECRET +"\"")

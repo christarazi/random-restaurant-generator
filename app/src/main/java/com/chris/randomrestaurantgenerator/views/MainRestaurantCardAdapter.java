@@ -5,13 +5,14 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chris.randomrestaurantgenerator.R;
 import com.chris.randomrestaurantgenerator.models.Restaurant;
-import com.chris.randomrestaurantgenerator.models.SavedListHolder;
+import com.chris.randomrestaurantgenerator.utils.SavedListHolder;
 import com.squareup.picasso.Picasso;
 
 /**
@@ -59,7 +60,8 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         Picasso.with(context).load(restaurant.getThumbnailURL()).into(holder.thumbnail);
         Picasso.with(context).load(restaurant.getRatingImageURL()).into(holder.ratingImage);
         holder.nameOfRestaurant.setText(restaurant.getName());
-        holder.categories.setText(restaurant.getCategories().toString());
+        holder.categories.setText(restaurant.getCategories().toString()
+                .replace("[", "").replace("]", "").trim());
 
         if (restaurant.getDeal().length() != 0) {
             holder.deals.setVisibility(View.VISIBLE);
@@ -68,7 +70,8 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         else
             holder.deals.setVisibility(View.GONE);
 
-        holder.distance.setText(String.format("%.2f mi away", restaurant.getDistance()));
+        holder.distanceAndReviewCount.setText(String.format("%d reviews | %.2f mi away",
+                restaurant.getReviewCount(), restaurant.getDistance()));
     }
 
     @Override
@@ -83,9 +86,9 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         ImageView thumbnail;
         TextView categories;
         TextView deals;
-        TextView distance;
+        TextView distanceAndReviewCount;
 
-        ImageView addToSavedList;
+        ImageButton saveToList;
 
         public RestaurantViewHolder(View itemView) {
             super(itemView);
@@ -95,22 +98,24 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
             thumbnail = (ImageView) itemView.findViewById(R.id.thumbnail);
             categories = (TextView) itemView.findViewById(R.id.categories);
             deals = (TextView) itemView.findViewById(R.id.deals);
-            distance = (TextView) itemView.findViewById(R.id.distance);
+            distanceAndReviewCount = (TextView) itemView.findViewById(R.id.distanceAndReviewCount);
 
-            addToSavedList = (ImageView) itemView.findViewById(R.id.addToSavedList);
+            saveToList = (ImageButton) itemView.findViewById(R.id.saveToList);
+
+            for (Restaurant r : savedListHolder.getSavedList()) {
+                if (r.hashCode() == restaurant.hashCode()) {
+                    saveToList.setEnabled(false);
+                    Toast.makeText(context, "You have already saved this restaurant.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
 
             // Adds current restaurant to the saved list on click.
-            addToSavedList.setOnClickListener(new View.OnClickListener() {
+            saveToList.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
-                    // If the user tries to save the same restaurant more than once, alert them.
-                    if (savedListHolder.getSavedList().contains(restaurant)) {
-                        Toast.makeText(context, "You have already saved this restaurant.", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
                     addToList(restaurant);
+                    saveToList.setEnabled(false);
                 }
             });
         }

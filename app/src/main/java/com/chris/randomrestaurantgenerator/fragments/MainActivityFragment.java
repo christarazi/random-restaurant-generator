@@ -91,7 +91,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     MapView mapView;
     GoogleMap map;
 
-    boolean useGPS;
     boolean taskRunning;
 
     @Override
@@ -149,7 +148,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
         itemTouchHelper.attachToRecyclerView(recyclerView);
 
-        locationHelper = new LocationProviderHelper(getActivity());
+        locationHelper = new LocationProviderHelper(getActivity(), rootLayout);
 
         return rootLayout;
     }
@@ -207,17 +206,11 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                             locationHelper.requestLocation();
 
-                            userLocationInfo.setText("Current Location");
-
-                            useGPS = true;
-
                             return true;
                         }
 
                         // Else show request for Location permissions and/or request them.
                         else {
-
-                            useGPS = false;
 
                             if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
                                     || shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
@@ -276,7 +269,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 // Clear all the markers on the map.
                 map.clear();
 
-                if (useGPS) {
+                if (LocationProviderHelper.useGPS) {
 
                     // If the user is using location, check to make sure the location is not null before beginning.
                     // Else, begin the AsyncTask.
@@ -377,12 +370,12 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     Snackbar.LENGTH_LONG).show();
 
             locationHelper.requestLocation();
-            useGPS = true;
+            LocationProviderHelper.useGPS = true;
         } else {
             Snackbar.make(rootLayout, "Permission denied, you cannot access the GPS. " +
                     "Please enter your location manually.", Snackbar.LENGTH_LONG).show();
 
-            useGPS = false;
+            LocationProviderHelper.useGPS = false;
         }
     }
 
@@ -416,8 +409,16 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     // Async task that connects to Yelp's API and queries for restaurants based on location / zip code.
     public class GetJsonData extends AsyncTask<String, Void, Restaurant> {
 
+        // Holds a copy of the parameters in case we need to make another call (recursive) to this AsyncTask.
+        String[] params;
+
+        // We don't want to display a restaurant that is closed to the user.
+        boolean isRestaurantClosed = false;
+
         @Override
         protected Restaurant doInBackground(String... params) {
+
+            this.params = params;
 
             // Signal the task is running
             taskRunning = true;
@@ -464,7 +465,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 // Get a random offset for Yelp results
                 startingOffset = new Random().nextInt(2) * 20;
 
-                if (useGPS) {
+                if (LocationProviderHelper.useGPS) {
                     request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + userFilterStr +
                             "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
 
@@ -497,6 +498,11 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                 int index = new Random().nextInt(length);
 
+                isRestaurantClosed = jsonBusinessesArray.getJSONObject(index).getBoolean("is_closed");
+                if (isRestaurantClosed) {
+                    return null;
+                }
+
                 // Convert a random restaurant from json to Restaurant object
                 return convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(index));
 
@@ -515,6 +521,12 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         protected void onPostExecute(Restaurant restaurant) {
 
             super.onPostExecute(restaurant);
+
+            // If restaurant is closed, run this AsyncTask again.
+            if (isRestaurantClosed) {
+                new GetJsonData().execute(params);
+                return;
+            }
 
             if (restaurant == null) {
                 Toast.makeText(getActivity(), "Error during transmission. Either no restaurants were " +
@@ -589,7 +601,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 Location restaurantLoc = new Location("restaurantLoc");
                 restaurantLoc.setLatitude(lat);
                 restaurantLoc.setLongitude(lon);
-                if (useGPS) {
+                if (LocationProviderHelper.useGPS) {
                     distance = locationHelper.getLocation().distanceTo(restaurantLoc);
                 } else {
                     Geocoder geocoder = new Geocoder(getContext());
@@ -621,15 +633,15 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         JSONObject jsonObject = dealsArray.getJSONObject(i);
                         dealsList.add(jsonObject.getString("title"));
                     }
-                    deals = dealsList.toString();
+                    deals = dealsList.toString().replace("[", "").replace("]", "").trim();
                 } catch (Exception ignored) {
                     deals = "";
                 }
 
                 // Construct a new Restaurant object with all the info we gathered above and return it
                 Restaurant restaurant = new Restaurant(obj.getString("name"), (float) obj.getDouble("rating"),
-                        obj.getString("rating_img_url_large"), obj.getString("image_url"), obj.getInt("review_count"), obj.getString("url"), categories, obj.getString("phone"),
-                        obj.getBoolean("is_closed"), address, deals, distance, lat, lon);
+                        obj.getString("rating_img_url_large"), obj.getString("image_url"), obj.getInt("review_count"),
+                        obj.getString("url"), categories, address, deals, distance, lat, lon);
 
                 return restaurant;
             } catch (JSONException | IOException e) {

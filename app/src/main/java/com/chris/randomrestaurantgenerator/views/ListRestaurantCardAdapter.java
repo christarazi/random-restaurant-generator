@@ -10,7 +10,7 @@ import android.widget.TextView;
 
 import com.chris.randomrestaurantgenerator.R;
 import com.chris.randomrestaurantgenerator.models.Restaurant;
-import com.chris.randomrestaurantgenerator.models.SavedListHolder;
+import com.chris.randomrestaurantgenerator.utils.SavedListHolder;
 import com.squareup.picasso.Picasso;
 
 /**
@@ -46,7 +46,8 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
         Picasso.with(context).load(restaurant.getThumbnailURL()).into(holder.thumbnail);
         Picasso.with(context).load(restaurant.getRatingImageURL()).into(holder.ratingImage);
         holder.nameOfRestaurant.setText(restaurant.getName());
-        holder.categories.setText(restaurant.getCategories().toString());
+        holder.categories.setText(restaurant.getCategories().toString()
+                .replace("[", "").replace("]", "").trim());
 
         if (restaurant.getDeal().length() != 0) {
             holder.deals.setVisibility(View.VISIBLE);
@@ -55,7 +56,8 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
         else
             holder.deals.setVisibility(View.GONE);
 
-        holder.distance.setText(String.format("%.2f mi away", restaurant.getDistance()));
+        holder.distanceAndReviewCount.setText(String.format("%d reviews | %.2f mi away",
+                restaurant.getReviewCount(), restaurant.getDistance()));
     }
 
     @Override
@@ -70,7 +72,7 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
         ImageView thumbnail;
         TextView categories;
         TextView deals;
-        TextView distance;
+        TextView distanceAndReviewCount;
 
         public RestaurantViewHolder(View itemView) {
             super(itemView);
@@ -80,8 +82,7 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
             thumbnail = (ImageView) itemView.findViewById(R.id.listThumbnail);
             categories = (TextView) itemView.findViewById(R.id.listCategories);
             deals = (TextView) itemView.findViewById(R.id.listDeals);
-            distance = (TextView) itemView.findViewById(R.id.listDistance);
+            distanceAndReviewCount = (TextView) itemView.findViewById(R.id.listDistanceAndReviewCount);
         }
-
     }
 }

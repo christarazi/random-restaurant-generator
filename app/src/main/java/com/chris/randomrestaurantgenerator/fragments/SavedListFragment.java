@@ -16,7 +16,7 @@ import android.widget.TextView;
 
 import com.chris.randomrestaurantgenerator.R;
 import com.chris.randomrestaurantgenerator.models.Restaurant;
-import com.chris.randomrestaurantgenerator.models.SavedListHolder;
+import com.chris.randomrestaurantgenerator.utils.SavedListHolder;
 import com.chris.randomrestaurantgenerator.views.ListRestaurantCardAdapter;
 
 /**

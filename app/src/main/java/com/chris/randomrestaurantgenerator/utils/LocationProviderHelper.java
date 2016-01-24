@@ -11,7 +11,11 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.chris.randomrestaurantgenerator.R;
 
 import static android.support.v4.content.ContextCompat.checkSelfPermission;
 
@@ -22,17 +26,21 @@ import static android.support.v4.content.ContextCompat.checkSelfPermission;
 public class LocationProviderHelper {
 
     public static final int MY_LOCATION_REQUEST_CODE = 1;
+    public static boolean useGPS = false;
+
     private Activity activity;
     private LocationManager locationManager;
     private LocationListener locationListener;
     private Location location;
+    private TextView userLocationInfoBox;
     private ProgressDialog dialog;
     private boolean locationChanged = false;
 
-    public LocationProviderHelper(final Activity act) {
+    public LocationProviderHelper(final Activity act, final View view) {
 
         this.activity = act;
         this.dialog = new ProgressDialog(this.activity);
+        this.userLocationInfoBox = (TextView) view.findViewById(R.id.userLocationInfo);
 
         // Acquire a reference to the system Location Manager
         locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
@@ -44,6 +52,7 @@ public class LocationProviderHelper {
                 location = loc;
                 Toast.makeText(activity, "Got location: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
+                userLocationInfoBox.setText("Current Location");
                 dismissLocationUpdater();
             }
 
@@ -75,6 +84,9 @@ public class LocationProviderHelper {
     }
 
     public void requestLocation() {
+
+        // If location permissions are denied, then try to request them.
+        // Else, proceed with getting Location.
         if (checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -84,6 +96,7 @@ public class LocationProviderHelper {
         else {
             this.locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this.getLocationListener());
 
+            useGPS = true;
             dialog.setMessage("Getting location...");
             dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             dialog.setCanceledOnTouchOutside(false);
@@ -93,6 +106,8 @@ public class LocationProviderHelper {
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
                     dismissLocationUpdater();
+                    useGPS = false;
+                    userLocationInfoBox.setText("");
                 }
             });
             dialog.show();

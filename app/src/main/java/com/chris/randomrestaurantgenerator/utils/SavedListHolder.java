@@ -1,4 +1,6 @@
-package com.chris.randomrestaurantgenerator.models;
+package com.chris.randomrestaurantgenerator.utils;
+
+import com.chris.randomrestaurantgenerator.models.Restaurant;
 
 import java.util.ArrayList;
 

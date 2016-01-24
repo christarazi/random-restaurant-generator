@@ -17,8 +17,6 @@ public class Restaurant implements Parcelable {
     private int reviewCount;
     private String url;
     private ArrayList<String> categories;
-    private String phoneNumber;
-    private boolean isClosed;
     private ArrayList<String> address;
     private String deal;
     private double distance;
@@ -26,8 +24,8 @@ public class Restaurant implements Parcelable {
     private double lon;
 
     public Restaurant(String name, float rating, String ratingImageURL, String thumbnailURL, int reviewCount,
-                      String url, ArrayList<String> categories, String phoneNumber, boolean isClosed,
-                      ArrayList<String> address, String deal, double distance, double lat, double lon) {
+                      String url, ArrayList<String> categories, ArrayList<String> address,
+                      String deal, double distance, double lat, double lon) {
         this.name = name;
         this.rating = rating;
         this.ratingImageURL = ratingImageURL;
@@ -35,8 +33,6 @@ public class Restaurant implements Parcelable {
         this.reviewCount = reviewCount;
         this.url = url;
         this.categories = categories;
-        this.phoneNumber = phoneNumber;
-        this.isClosed = isClosed;
         this.address = address;
         this.deal = deal;
         this.distance = distance;
@@ -62,14 +58,6 @@ public class Restaurant implements Parcelable {
 
     public ArrayList<String> getCategories() {
         return categories;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public boolean isClosed() {
-        return isClosed;
     }
 
     public ArrayList<String> getAddress() {
@@ -113,8 +101,6 @@ public class Restaurant implements Parcelable {
         } else {
             categories = null;
         }
-        phoneNumber = in.readString();
-        isClosed = in.readByte() != 0x00;
         if (in.readByte() == 0x01) {
             address = new ArrayList<String>();
             in.readList(address, String.class.getClassLoader());
@@ -146,8 +132,6 @@ public class Restaurant implements Parcelable {
             dest.writeByte((byte) (0x01));
             dest.writeList(categories);
         }
-        dest.writeString(phoneNumber);
-        dest.writeByte((byte) (isClosed ? 0x01 : 0x00));
         if (address == null) {
             dest.writeByte((byte) (0x00));
         } else {

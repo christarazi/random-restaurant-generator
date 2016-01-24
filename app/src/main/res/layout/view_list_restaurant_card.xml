@@ -44,7 +44,7 @@
             android:gravity="top"
             android:paddingLeft="@dimen/_4sdp"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textSize="@dimen/_18sdp" />
+            android:textSize="@dimen/_16sdp" />
 
         <TextView
             android:id="@+id/listCategories"
@@ -70,14 +70,15 @@
             android:textSize="@dimen/_12sdp" />
 
         <TextView
+            android:id="@+id/listDistanceAndReviewCount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingLeft="@dimen/_4sdp"
             android:textAppearance="?android:attr/textAppearanceSmall"
-            android:id="@+id/listDistance"
             android:layout_below="@+id/listDeals"
             android:layout_toRightOf="@+id/listImageHolder"
             android:layout_toEndOf="@+id/listImageHolder" />
+
 
     </RelativeLayout>
 
