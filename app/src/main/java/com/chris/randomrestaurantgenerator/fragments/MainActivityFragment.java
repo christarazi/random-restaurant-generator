@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
@@ -469,11 +470,17 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + userFilterStr +
                             "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
 
+                    request.setConnectTimeout(15, TimeUnit.SECONDS);
+                    request.setReadTimeout(15, TimeUnit.SECONDS);
+
                     Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + userFilterStr +
                             "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
                 } else {
                     request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + userFilterStr +
                             "&location=" + userInputStr + "&offset=" + startingOffset);
+
+                    request.setConnectTimeout(15, TimeUnit.SECONDS);
+                    request.setReadTimeout(15, TimeUnit.SECONDS);
 
                     Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + userFilterStr +
                             "&location=" + userInputStr + "&offset=" + startingOffset);
@@ -549,7 +556,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             // Update the map with a new marker based on restaurant's coordinates.
             LatLng latLng = new LatLng(restaurant.getLat(), restaurant.getLon());
             map.addMarker(new MarkerOptions().position(latLng).title(String.format("%s: %s",
-                    restaurant.getName(), restaurant.getAddress())));
+                    restaurant.getName(), restaurant.getAddress())
+                    .replace("[", "").replace("]", "").trim()));
             map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14));
 
             mapCardContainer.setVisibility(View.VISIBLE);
