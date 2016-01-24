@@ -47,4 +47,6 @@ dependencies {
     // Forked above to my account to make use of unimplemented changes
     // using https://jitpack.io
     compile 'com.github.christarazi:MaterialShowcaseView:1.0.6'
+
+    compile 'org.sufficientlysecure:html-textview:1.3'
 }
