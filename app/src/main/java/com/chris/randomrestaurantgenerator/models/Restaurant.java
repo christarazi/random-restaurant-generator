@@ -144,6 +144,13 @@ public class Restaurant implements Parcelable {
         dest.writeDouble(lon);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Restaurant)
+            return this.url.equals(((Restaurant) o).url);
+        else return super.equals(o);
+    }
+
     @SuppressWarnings("unused")
     public static final Parcelable.Creator<Restaurant> CREATOR = new Parcelable.Creator<Restaurant>() {
         @Override

@@ -102,20 +102,18 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
 
             saveToList = (ImageButton) itemView.findViewById(R.id.saveToList);
 
-            for (Restaurant r : savedListHolder.getSavedList()) {
-                if (r.hashCode() == restaurant.hashCode()) {
-                    saveToList.setEnabled(false);
-                    Toast.makeText(context, "You have already saved this restaurant.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            }
-
             // Adds current restaurant to the saved list on click.
             saveToList.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    for (Restaurant r : savedListHolder.getSavedList()) {
+                        if (r.equals(restaurant)) {
+                            Toast.makeText(context, "You have already saved this restaurant.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    }
+
                     addToList(restaurant);
-                    saveToList.setEnabled(false);
                 }
             });
         }
