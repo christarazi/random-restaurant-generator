@@ -538,6 +538,10 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             if (restaurant == null) {
                 Toast.makeText(getActivity(), "Error during transmission. Either no restaurants were " +
                         "found in your area or an internet communication error occurred. Try again.", Toast.LENGTH_SHORT).show();
+
+                // Signal the task has finished (failed task is still a finished task)
+                taskRunning = false;
+
                 return;
             }
 
