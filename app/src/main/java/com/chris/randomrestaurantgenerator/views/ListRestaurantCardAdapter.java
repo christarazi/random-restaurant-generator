@@ -34,6 +34,7 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
     }
 
     public void remove(int index) {
+        savedListHolder.getSavedList().get(index).setSaved(false);
         savedListHolder.getSavedList().remove(index);
         notifyItemRemoved(index);
     }

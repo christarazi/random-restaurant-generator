@@ -341,6 +341,10 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     public void onResume() {
         super.onResume();
         mapView.onResume();
+
+        // Refresh the RecyclerView on resume.
+        if (mainRestaurantCardAdapter != null)
+            mainRestaurantCardAdapter.notifyDataSetChanged();
     }
 
     @Override

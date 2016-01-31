@@ -1,6 +1,7 @@
 package com.chris.randomrestaurantgenerator.views;
 
 import android.content.Context;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -72,6 +73,13 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
 
         holder.distanceAndReviewCount.setText(String.format("%d reviews | %.2f mi away",
                 restaurant.getReviewCount(), restaurant.getDistance()));
+
+        // Modify the save button depending on if the restaurant in the savedList or not.
+        if (restaurant.isSaved()) {
+            holder.saveButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.bookmark_check));
+        }
+        else
+            holder.saveButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.bookmark_outline_plus));
     }
 
     @Override
@@ -88,7 +96,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         TextView deals;
         TextView distanceAndReviewCount;
 
-        ImageButton saveToList;
+        ImageButton saveButton;
 
         public RestaurantViewHolder(View itemView) {
             super(itemView);
@@ -100,10 +108,10 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
             deals = (TextView) itemView.findViewById(R.id.deals);
             distanceAndReviewCount = (TextView) itemView.findViewById(R.id.distanceAndReviewCount);
 
-            saveToList = (ImageButton) itemView.findViewById(R.id.saveToList);
+            saveButton = (ImageButton) itemView.findViewById(R.id.saveButton);
 
             // Adds current restaurant to the saved list on click.
-            saveToList.setOnClickListener(new View.OnClickListener() {
+            saveButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     for (Restaurant r : savedListHolder.getSavedList()) {
@@ -114,9 +122,10 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
                     }
 
                     addToList(restaurant);
+                    restaurant.setSaved(true);
+                    saveButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.bookmark_check));
                 }
             });
         }
-
     }
 }

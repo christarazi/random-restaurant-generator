@@ -23,6 +23,8 @@ public class Restaurant implements Parcelable {
     private double lat;
     private double lon;
 
+    private boolean isSaved;
+
     public Restaurant(String name, float rating, String ratingImageURL, String thumbnailURL, int reviewCount,
                       String url, ArrayList<String> categories, ArrayList<String> address,
                       String deal, double distance, double lat, double lon) {
@@ -86,6 +88,14 @@ public class Restaurant implements Parcelable {
 
     public double getLon() {
         return lon;
+    }
+
+    public boolean isSaved() {
+        return isSaved;
+    }
+
+    public void setSaved(boolean b) {
+        this.isSaved = b;
     }
 
     protected Restaurant(Parcel in) {
