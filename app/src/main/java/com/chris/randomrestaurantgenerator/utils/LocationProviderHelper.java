@@ -2,6 +2,7 @@ package com.chris.randomrestaurantgenerator.utils;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -34,7 +35,8 @@ public class LocationProviderHelper {
     private Location location;
     private TextView userLocationInfoBox;
     private ProgressDialog dialog;
-    private boolean locationChanged = false;
+    private String PROVIDER;
+    private String infoText = "Current Location";
 
     public LocationProviderHelper(final Activity act, final View view) {
 
@@ -48,12 +50,15 @@ public class LocationProviderHelper {
         // Define a listener that responds to location updates
         locationListener = new LocationListener() {
             public void onLocationChanged(Location loc) {
-                locationChanged = true;
                 location = loc;
                 Toast.makeText(activity, "Got location: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
-                userLocationInfoBox.setText("Current Location");
                 dismissLocationUpdater();
+
+                if (PROVIDER.equals(LocationManager.GPS_PROVIDER))
+                    userLocationInfoBox.setText(String.format("%s (GPS)", infoText));
+                else if (PROVIDER.equals(LocationManager.NETWORK_PROVIDER))
+                    userLocationInfoBox.setText(String.format("%s (NETWORK)", infoText));
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -79,10 +84,6 @@ public class LocationProviderHelper {
         return location;
     }
 
-    public boolean isLocationChanged() {
-        return locationChanged;
-    }
-
     public void requestLocation() {
 
         // If location permissions are denied, then try to request them.
@@ -92,9 +93,35 @@ public class LocationProviderHelper {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 activity.requestPermissions(new String[]{Manifest.permission_group.LOCATION}, MY_LOCATION_REQUEST_CODE);
             }
-        }
-        else {
-            this.locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this.getLocationListener());
+        } else {
+
+            // Check which Location provider is available to us.
+            if (this.locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                this.PROVIDER = LocationManager.GPS_PROVIDER;
+            } else if (this.locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                Toast.makeText(this.activity, "GPS is not turned on. Please enable high accuracy mode for better accuracy. Using network for location...", Toast.LENGTH_LONG)
+                        .show();
+                this.PROVIDER = LocationManager.NETWORK_PROVIDER;
+            } else {
+                AlertDialog.Builder dialog = new AlertDialog.Builder(this.activity);
+                dialog.setMessage("Location is off. Please enable Location in your settings.");
+                dialog.setTitle("Error");
+                dialog.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                dialog.show();
+
+                return;
+            }
+
+            this.locationManager.requestLocationUpdates(this.PROVIDER, 1000, 1, this.getLocationListener());
+
+            // For some reason, requesting Location updates gets stuck randomly, so this kicks it in the butt and hurries it along.
+            // See: http://stackoverflow.com/q/14700755/2193236
+            this.locationManager.getLastKnownLocation(this.PROVIDER);
 
             useGPS = true;
             dialog.setMessage("Getting location...");
@@ -120,8 +147,7 @@ public class LocationProviderHelper {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 activity.requestPermissions(new String[]{Manifest.permission_group.LOCATION}, MY_LOCATION_REQUEST_CODE);
             }
-        }
-        else
+        } else
             this.locationManager.removeUpdates(locationListener);
     }
 }

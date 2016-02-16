@@ -10,6 +10,18 @@ import java.util.ArrayList;
  */
 public class Restaurant implements Parcelable {
 
+    @SuppressWarnings("unused")
+    public static final Parcelable.Creator<Restaurant> CREATOR = new Parcelable.Creator<Restaurant>() {
+        @Override
+        public Restaurant createFromParcel(Parcel in) {
+            return new Restaurant(in);
+        }
+
+        @Override
+        public Restaurant[] newArray(int size) {
+            return new Restaurant[size];
+        }
+    };
     private String name;
     private float rating;
     private String ratingImageURL;
@@ -22,7 +34,6 @@ public class Restaurant implements Parcelable {
     private double distance;
     private double lat;
     private double lon;
-
     private boolean isSaved;
 
     public Restaurant(String name, float rating, String ratingImageURL, String thumbnailURL, int reviewCount,
@@ -40,6 +51,31 @@ public class Restaurant implements Parcelable {
         this.distance = distance;
         this.lat = lat;
         this.lon = lon;
+    }
+
+    protected Restaurant(Parcel in) {
+        name = in.readString();
+        rating = in.readFloat();
+        ratingImageURL = in.readString();
+        thumbnailURL = in.readString();
+        reviewCount = in.readInt();
+        url = in.readString();
+        if (in.readByte() == 0x01) {
+            categories = new ArrayList<String>();
+            in.readList(categories, String.class.getClassLoader());
+        } else {
+            categories = null;
+        }
+        if (in.readByte() == 0x01) {
+            address = new ArrayList<String>();
+            in.readList(address, String.class.getClassLoader());
+        } else {
+            address = null;
+        }
+        deal = in.readString();
+        distance = in.readDouble();
+        lat = in.readDouble();
+        lon = in.readDouble();
     }
 
     public String getName() {
@@ -98,31 +134,6 @@ public class Restaurant implements Parcelable {
         this.isSaved = b;
     }
 
-    protected Restaurant(Parcel in) {
-        name = in.readString();
-        rating = in.readFloat();
-        ratingImageURL = in.readString();
-        thumbnailURL = in.readString();
-        reviewCount = in.readInt();
-        url = in.readString();
-        if (in.readByte() == 0x01) {
-            categories = new ArrayList<String>();
-            in.readList(categories, String.class.getClassLoader());
-        } else {
-            categories = null;
-        }
-        if (in.readByte() == 0x01) {
-            address = new ArrayList<String>();
-            in.readList(address, String.class.getClassLoader());
-        } else {
-            address = null;
-        }
-        deal = in.readString();
-        distance = in.readDouble();
-        lat = in.readDouble();
-        lon = in.readDouble();
-    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -160,17 +171,4 @@ public class Restaurant implements Parcelable {
             return this.url.equals(((Restaurant) o).url);
         else return super.equals(o);
     }
-
-    @SuppressWarnings("unused")
-    public static final Parcelable.Creator<Restaurant> CREATOR = new Parcelable.Creator<Restaurant>() {
-        @Override
-        public Restaurant createFromParcel(Parcel in) {
-            return new Restaurant(in);
-        }
-
-        @Override
-        public Restaurant[] newArray(int size) {
-            return new Restaurant[size];
-        }
-    };
 }

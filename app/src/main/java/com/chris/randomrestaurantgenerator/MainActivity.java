@@ -48,8 +48,7 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_saved_list) {
             Intent intent = new Intent(this, SavedListActivity.class);
             startActivity(intent);
-        }
-        else if (id == R.id.action_about) {
+        } else if (id == R.id.action_about) {
             Intent intent = new Intent(this, AboutActivity.class);
             startActivity(intent);
         }
@@ -71,8 +70,7 @@ public class MainActivity extends AppCompatActivity {
                     MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
                             .findFragmentById(R.id.mainFragment);
                     fragment.reactToPermissionsCallback(true);
-                }
-                else {
+                } else {
 
 
                     MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()

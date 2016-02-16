@@ -43,6 +43,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
 
     /**
      * Helper function to add a restaurant to the savedList.
+     *
      * @param res: the restaurant object we want to add.
      */
     private void addToList(Restaurant res) {
@@ -67,8 +68,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         if (restaurant.getDeal().length() != 0) {
             holder.deals.setVisibility(View.VISIBLE);
             holder.deals.setText(restaurant.getDeal());
-        }
-        else
+        } else
             holder.deals.setVisibility(View.GONE);
 
         holder.distanceAndReviewCount.setText(String.format("%d reviews | %.2f mi away",
@@ -77,8 +77,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         // Modify the save button depending on if the restaurant in the savedList or not.
         if (restaurant.isSaved()) {
             holder.saveButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.bookmark_check));
-        }
-        else
+        } else
             holder.saveButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.bookmark_outline_plus));
     }
 

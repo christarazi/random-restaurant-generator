@@ -53,8 +53,7 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
         if (restaurant.getDeal().length() != 0) {
             holder.deals.setVisibility(View.VISIBLE);
             holder.deals.setText(restaurant.getDeal());
-        }
-        else
+        } else
             holder.deals.setVisibility(View.GONE);
 
         holder.distanceAndReviewCount.setText(String.format("%d reviews | %.2f mi away",

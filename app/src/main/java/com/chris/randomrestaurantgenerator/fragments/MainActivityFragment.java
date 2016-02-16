@@ -366,6 +366,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
     /**
      * Callback from MainActivity to respond to when permissions have changed.
+     *
      * @param isGranted: if the permissions have been granted or denied
      */
     public void reactToPermissionsCallback(boolean isGranted) {
