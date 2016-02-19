@@ -115,6 +115,8 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
                 public void onClick(View v) {
                     for (Restaurant r : savedListHolder.getSavedList()) {
                         if (r.equals(restaurant)) {
+                            restaurant.setSaved(true);
+                            saveButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.bookmark_check));
                             Toast.makeText(context, "You have already saved this restaurant.", Toast.LENGTH_SHORT).show();
                             return;
                         }
