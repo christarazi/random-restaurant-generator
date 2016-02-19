@@ -66,17 +66,15 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case LocationProviderHelper.MY_LOCATION_REQUEST_CODE: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
                     MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
                             .findFragmentById(R.id.mainFragment);
                     fragment.reactToPermissionsCallback(true);
                 } else {
-
-
                     MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
                             .findFragmentById(R.id.mainFragment);
                     fragment.reactToPermissionsCallback(false);
                 }
+                break;
             }
         }
     }
