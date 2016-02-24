@@ -213,6 +213,10 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         // Else show request for Location permissions and/or request them.
                         else {
 
+                            /**
+                             * The reason why this block of code is here and not in the MainActivity
+                             * is because we need references to rootLayout and the context.
+                             */
                             if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
                                     || shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
                                 Snackbar.make(rootLayout, "Location permissions are required in order to use your GPS.",
@@ -226,6 +230,10 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                                             }
                                         })
                                         .show();
+                            } else {
+                                Toast.makeText(getContext(),
+                                        "Location permission currently denied. Please enable in your app settings",
+                                        Toast.LENGTH_LONG).show();
                             }
 
                             return true;
