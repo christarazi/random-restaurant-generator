@@ -12,12 +12,36 @@
         android:layout_height="wrap_content"
         android:theme="@style/AppTheme.AppBarOverlay">
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:popupTheme="@style/AppTheme.PopupOverlay" />
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/_minus8sdp"
+                android:background="?attr/colorPrimary"
+                app:popupTheme="@style/AppTheme.PopupOverlay">
+
+            </android.support.v7.widget.Toolbar>
+
+            <com.arlib.floatingsearchview.FloatingSearchView
+                android:id="@+id/searchBox"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_44sdp"
+                android:layout_marginLeft="@dimen/_6sdp"
+                android:layout_marginRight="@dimen/_6sdp"
+                android:layout_marginBottom="@dimen/_2sdp"
+                android:imeOptions="actionNext"
+                app:floatingSearch_searchHint="Enter Location..."
+                app:floatingSearch_dimBackground="false"
+                app:floatingSearch_menu="@menu/search_box_menu"
+                app:floatingSearch_leftActionMode="noLeftAction" >
+            </com.arlib.floatingsearchview.FloatingSearchView>
+
+        </LinearLayout>
 
     </android.support.design.widget.AppBarLayout>
 

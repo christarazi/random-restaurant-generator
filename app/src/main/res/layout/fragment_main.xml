@@ -7,37 +7,14 @@
     android:paddingLeft="0dp"
     android:paddingRight="0dp"
     android:paddingTop="0dp"
-    tools:context=".MainActivityFragment"
+    tools:context=".MainActivity"
     tools:showIn="@layout/activity_main">
-
-    <android.support.design.widget.TextInputLayout
-        android:id="@+id/tilUserInfo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_6sdp">
-
-        <EditText
-            android:id="@+id/userLocationInfo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginLeft="@dimen/_6sdp"
-            android:layout_marginRight="@dimen/_6sdp"
-            android:background="?editTextBackground"
-            android:drawableRight="@drawable/crosshairs_gps"
-            android:gravity="center_vertical|start"
-            android:hint="Enter zip, address, city, or use Location"
-            android:imeOptions="actionNext"
-            android:singleLine="true"
-            android:textSize="@dimen/_13sdp" />
-
-    </android.support.design.widget.TextInputLayout>
 
     <android.support.design.widget.TextInputLayout
         android:id="@+id/tilUserFilter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/tilUserInfo">
+        android:layout_marginTop="@dimen/_4sdp">
 
         <EditText
             android:id="@+id/filter"
@@ -48,10 +25,11 @@
             android:layout_marginRight="@dimen/_6sdp"
             android:background="?editTextBackground"
             android:gravity="center_vertical|start"
-            android:hint="(Optional) Enter any filter, e.g. vegetarian, bbq, sushi"
+            android:hint="@string/filter_hint"
             android:imeOptions="actionDone"
             android:singleLine="true"
-            android:textSize="@dimen/_12sdp" />
+            android:textSize="@dimen/_12sdp"
+            android:visibility="gone"/>
 
     </android.support.design.widget.TextInputLayout>
 
@@ -68,14 +46,14 @@
         android:padding="0dp"
         android:paddingLeft="@dimen/_40sdp"
         android:paddingRight="@dimen/_40sdp"
-        android:text="GENERATE"
+        android:text="@string/string_button_text_generate"
         android:textColor="#FFFFFF"
         android:textSize="@dimen/_16sdp" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/_120sdp"
+        android:layout_height="@dimen/_130sdp"
         android:layout_below="@+id/tilUserFilter">
 
     </android.support.v7.widget.RecyclerView>

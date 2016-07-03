@@ -25,13 +25,13 @@
 
             <ImageView
                 android:id="@+id/thumbnail"
-                android:layout_width="@dimen/_75sdp"
-                android:layout_height="@dimen/_75sdp" />
+                android:layout_width="@dimen/_85sdp"
+                android:layout_height="@dimen/_85sdp" />
 
             <ImageView
                 android:id="@+id/rating"
-                android:layout_width="@dimen/_75sdp"
-                android:layout_height="@dimen/_15sdp"
+                android:layout_width="@dimen/_85sdp"
+                android:layout_height="@dimen/_20sdp"
                 android:layout_marginTop="@dimen/_4sdp"/>
         </LinearLayout>
 

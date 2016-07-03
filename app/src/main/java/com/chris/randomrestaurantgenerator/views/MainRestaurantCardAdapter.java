@@ -1,8 +1,10 @@
 package com.chris.randomrestaurantgenerator.views;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,9 +14,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chris.randomrestaurantgenerator.R;
+import com.chris.randomrestaurantgenerator.db.RestaurantDBHelper;
 import com.chris.randomrestaurantgenerator.models.Restaurant;
 import com.chris.randomrestaurantgenerator.utils.SavedListHolder;
 import com.squareup.picasso.Picasso;
+
+import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * A RecyclerView Adapter for the main fragment. Only displays one card at a time, rather than a list.
@@ -24,12 +30,13 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
     Context context;
     Restaurant restaurant;
     SavedListHolder savedListHolder;
+    RestaurantDBHelper dbHelper;
 
     public MainRestaurantCardAdapter(Context con, Restaurant res) {
         this.context = con;
         this.restaurant = res;
-
         this.savedListHolder = SavedListHolder.getInstance();
+        this.dbHelper = new RestaurantDBHelper(this.context, null);
     }
 
     public void add(Restaurant res) {
@@ -71,7 +78,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         } else
             holder.deals.setVisibility(View.GONE);
 
-        holder.distanceAndReviewCount.setText(String.format("%d reviews | %.2f mi away",
+        holder.distanceAndReviewCount.setText(String.format(Locale.ENGLISH, "%d reviews | %.2f mi away",
                 restaurant.getReviewCount(), restaurant.getDistance()));
 
         // Modify the save button depending on if the restaurant in the savedList or not.
@@ -122,11 +129,33 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
                         }
                     }
 
+                    new InsertIntoDB().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, restaurant);
+
                     addToList(restaurant);
                     restaurant.setSaved(true);
                     saveButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.bookmark_check));
                 }
             });
+        }
+    }
+
+    private class InsertIntoDB extends AsyncTask<Restaurant, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Restaurant... params) {
+            dbHelper.insert(params[0]);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            ArrayList<Restaurant> r = dbHelper.getAll();
+            Log.d("CHRIS", "Inserted into db");
+
+            for (int i = 0; i < r.size(); i++) {
+                Log.d("CHRIS", r.get(i).getName());
+            }
         }
     }
 }

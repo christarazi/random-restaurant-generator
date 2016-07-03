@@ -1,7 +1,9 @@
 package com.chris.randomrestaurantgenerator.views;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,9 +11,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.chris.randomrestaurantgenerator.R;
+import com.chris.randomrestaurantgenerator.db.RestaurantDBHelper;
 import com.chris.randomrestaurantgenerator.models.Restaurant;
 import com.chris.randomrestaurantgenerator.utils.SavedListHolder;
 import com.squareup.picasso.Picasso;
+
+import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * A RecyclerView Adapter for the savedList.
@@ -20,10 +26,12 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
 
     Context context;
     SavedListHolder savedListHolder;
+    RestaurantDBHelper dbHelper;
 
     public ListRestaurantCardAdapter(Context con) {
         this.context = con;
         this.savedListHolder = SavedListHolder.getInstance();
+        this.dbHelper = new RestaurantDBHelper(this.context, null);
     }
 
     @Override
@@ -34,9 +42,23 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
     }
 
     public void remove(int index) {
-        savedListHolder.getSavedList().get(index).setSaved(false);
-        savedListHolder.getSavedList().remove(index);
+        Restaurant deleteThis = savedListHolder.getSavedList().get(index);
+        new DeleteFromDB().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, deleteThis);
+        deleteThis.setSaved(false);
+        savedListHolder.getSavedList().remove(deleteThis);
         notifyItemRemoved(index);
+    }
+
+    public void removeAll() {
+        if (savedListHolder.getSavedList() == null) return;
+
+        for (Restaurant r : savedListHolder.getSavedList())
+            r.setSaved(false);
+
+        int amount = savedListHolder.getSavedList().size();
+        savedListHolder.getSavedList().clear();
+        notifyItemRangeRemoved(0, amount);
+        new DeleteAllFromDB().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     @Override
@@ -56,7 +78,7 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
         } else
             holder.deals.setVisibility(View.GONE);
 
-        holder.distanceAndReviewCount.setText(String.format("%d reviews | %.2f mi away",
+        holder.distanceAndReviewCount.setText(String.format(Locale.ENGLISH, "%d reviews | %.2f mi away",
                 restaurant.getReviewCount(), restaurant.getDistance()));
     }
 
@@ -85,4 +107,45 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
             distanceAndReviewCount = (TextView) itemView.findViewById(R.id.listDistanceAndReviewCount);
         }
     }
+
+    private class DeleteFromDB extends AsyncTask<Restaurant, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Restaurant... params) {
+            dbHelper.delete(params[0]);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            ArrayList<Restaurant> r = dbHelper.getAll();
+            Log.d("CHRIS", "Removed from db");
+
+            for (int i = 0; i < r.size(); i++) {
+                Log.d("CHRIS", r.get(i).getName());
+            }
+        }
+    }
+
+    private class DeleteAllFromDB extends AsyncTask<Restaurant, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Restaurant... params) {
+            dbHelper.deleteAll();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            ArrayList<Restaurant> r = dbHelper.getAll();
+            Log.d("CHRIS", "Removed all from db");
+
+            for (int i = 0; i < r.size(); i++) {
+                Log.d("CHRIS", r.get(i).getName());
+            }
+        }
+    }
+
 }

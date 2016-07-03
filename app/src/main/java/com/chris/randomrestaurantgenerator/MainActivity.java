@@ -1,7 +1,6 @@
 package com.chris.randomrestaurantgenerator;
 
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -9,9 +8,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-
-import com.chris.randomrestaurantgenerator.fragments.MainActivityFragment;
-import com.chris.randomrestaurantgenerator.utils.LocationProviderHelper;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,7 +28,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
@@ -48,7 +43,8 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_saved_list) {
             Intent intent = new Intent(this, SavedListActivity.class);
             startActivity(intent);
-        } else if (id == R.id.action_about) {
+        }
+        else if (id == R.id.action_about) {
             Intent intent = new Intent(this, AboutActivity.class);
             startActivity(intent);
         }
@@ -57,25 +53,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Function to be called from MainActivityFragment to return the menu button view for the savedList.
-    public View getMenuItemView() {
-        return findViewById(R.id.action_saved_list);
+    public View getMenuItemView(int id) {
+        return findViewById(id);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case LocationProviderHelper.MY_LOCATION_REQUEST_CODE: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
-                            .findFragmentById(R.id.mainFragment);
-                    fragment.reactToPermissionsCallback(true);
-                } else {
-                    MainActivityFragment fragment = (MainActivityFragment) getSupportFragmentManager()
-                            .findFragmentById(R.id.mainFragment);
-                    fragment.reactToPermissionsCallback(false);
-                }
-                break;
-            }
-        }
+        // Empty because LocationProviderHelper handles all permissions.
     }
 }

@@ -1,11 +1,9 @@
 package com.chris.randomrestaurantgenerator.fragments;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
@@ -13,16 +11,15 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
@@ -34,6 +31,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.arlib.floatingsearchview.FloatingSearchView;
+import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
+import com.chris.randomrestaurantgenerator.BuildConfig;
 import com.chris.randomrestaurantgenerator.MainActivity;
 import com.chris.randomrestaurantgenerator.R;
 import com.chris.randomrestaurantgenerator.managers.UnscrollableLinearLayoutManager;
@@ -58,7 +58,6 @@ import org.scribe.model.Token;
 import org.scribe.model.Verb;
 import org.scribe.oauth.OAuthService;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -76,7 +75,7 @@ import uk.co.deanwild.materialshowcaseview.shape.RectangleShape;
  */
 public class MainActivityFragment extends Fragment implements OnMapReadyCallback {
 
-    EditText userLocationInfo;
+    FloatingSearchView searchLocationBox;
     EditText filterBox;
     Button generate;
 
@@ -92,7 +91,17 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     MapView mapView;
     GoogleMap map;
 
-    boolean taskRunning;
+    OAuthService service;
+    Token accessToken;
+
+    int generateBtnColor;
+    boolean taskRunning = false;
+    boolean runSecondQuery = true;
+    boolean restartQuery = false;
+    ArrayList<Restaurant> restaurants = new ArrayList<>();
+
+    AsyncTask initialYelpQuery;
+    AsyncTask backgroundYelpQuery;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -116,9 +125,14 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         final Bundle mapViewSavedInstanceState = savedInstanceState != null ? savedInstanceState.getBundle("mapViewSaveState") : null;
         mapView.onCreate(mapViewSavedInstanceState);
 
-        userLocationInfo = (EditText) rootLayout.findViewById(R.id.userLocationInfo);
         filterBox = (EditText) rootLayout.findViewById(R.id.filter);
         generate = (Button) rootLayout.findViewById(R.id.generate);
+        generateBtnColor = Color.parseColor("#F6511D");
+
+        // Build OAuth request
+        service = new ServiceBuilder().provider(TwoStepOAuth.class).apiKey(TwoStepOAuth.getConsumerKey())
+                .apiSecret(TwoStepOAuth.getConsumerSecret()).build();
+        accessToken = new Token(TwoStepOAuth.getToken(), TwoStepOAuth.getTokenSecret());
 
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -130,10 +144,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
 
                 // If user has swiped left, perform a click on the Generate button.
-                if (direction == 4) {
-                    //mapCardContainer.setVisibility(View.INVISIBLE);
+                if (direction == 4)
                     generate.performClick();
-                }
 
                 // If user has swiped right, open Yelp to current restaurant's page.
                 if (direction == 8) {
@@ -149,8 +161,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
         itemTouchHelper.attachToRecyclerView(recyclerView);
 
-        locationHelper = new LocationProviderHelper(getActivity(), rootLayout);
-
         return rootLayout;
     }
 
@@ -158,94 +168,57 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        // Reset all cache for showcase id.
-        //MaterialShowcaseView.resetAll(getContext());
+        // Must be defined in onActivityCreated() because searchLocationBox is part of MainActivity.
+        searchLocationBox = (FloatingSearchView) getActivity().findViewById(R.id.searchBox);
 
-        // A tutorial that displays only once explaining the input to the app.
-        MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), "1");
-        ShowcaseConfig config = new ShowcaseConfig();
-        config.setDelay(250);
-        sequence.setConfig(config);
-
-        sequence.addSequenceItem(buildShowcaseView(userLocationInfo, new RectangleShape(0, 0),
-                "Enter any zip code or city or address here, or click the GPS icon to use your current location."
-        ));
-
-        sequence.addSequenceItem(buildShowcaseView(filterBox, new RectangleShape(0, 0),
-                "Filter your results if you're in the mood for something specific."
-        ));
-
-        sequence.start();
+        // Create LocationProviderHelper instance.
+        locationHelper = new LocationProviderHelper(getActivity(), rootLayout, searchLocationBox);
 
         // Get Google Map using OnMapReadyCallback
         mapView.getMapAsync(this);
 
-        // OnTouchListener for the GPS icon in the EditText box.
-        userLocationInfo.setOnTouchListener(new View.OnTouchListener() {
+        if (savedInstanceState != null) {
+            currentRestaurant = savedInstanceState.getParcelable("currentRestaurant");
+            searchLocationBox.setSearchText(savedInstanceState.getString("locationQuery"));
+            filterBox.setText(savedInstanceState.getString("filterQuery"));
+            restaurants = savedInstanceState.getParcelableArrayList("restaurants");
+            Log.d("CHRIS", "restored state");
+        }
+
+        // Define actions on menu button clicks inside searchLocationBox.
+        searchLocationBox.setOnMenuItemClickListener(new FloatingSearchView.OnMenuItemClickListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                final int DRAWABLE_LEFT = 0;
-                final int DRAWABLE_TOP = 1;
-                final int DRAWABLE_RIGHT = 2;
-                final int DRAWABLE_BOTTOM = 3;
+            public void onActionMenuItemSelected(MenuItem item) {
+                int id = item.getItemId();
 
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-
-                    // Increase the clickable boundary for the GPS icon to make it easier to tap on.
-                    int clickBoundary = userLocationInfo.getRight()
-                            - userLocationInfo.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width()
-                            - 45;
-
-                    // If the user clicks on the Location icon, enable Location feature.
-                    if (event.getRawX() >= clickBoundary) {
-
-                        // If Location permissions have been granted, proceed.
-                        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                                == PackageManager.PERMISSION_GRANTED
-                                && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
-                                == PackageManager.PERMISSION_GRANTED) {
-
-                            locationHelper.requestLocation();
-
-                            return true;
-                        }
-
-                        // Else show request for Location permissions and/or request them.
-                        else {
-
-                            /**
-                             * The reason why this block of code is here and not in the MainActivity
-                             * is because we need references to rootLayout and the context.
-                             */
-                            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
-                                    || shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                                Snackbar.make(rootLayout, "Location permissions are required in order to use your GPS.",
-                                        Snackbar.LENGTH_INDEFINITE)
-                                        .setAction("GRANT", new View.OnClickListener() {
-                                            @Override
-                                            public void onClick(View v) {
-                                                ActivityCompat.requestPermissions(getActivity(),
-                                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                                                        LocationProviderHelper.MY_LOCATION_REQUEST_CODE);
-                                            }
-                                        })
-                                        .show();
-                            } else {
-                                Toast.makeText(getContext(),
-                                        "Location permission currently denied. Please enable in your app settings",
-                                        Toast.LENGTH_LONG).show();
-                            }
-
-                            return true;
-                        }
-                    } else {
-
-                        // If the user touches anywhere else, then we need to make the map
-                        // invisible to prevent the keyboard from pushing up.
-                        mapCardContainer.setVisibility(View.INVISIBLE);
-                    }
+                if (id == R.id.search_box_gps)
+                    locationHelper.requestLocation();
+                else if (id == R.id.search_box_filter) {
+                    if (filterBox.getVisibility() == View.GONE)
+                        filterBox.setVisibility(View.VISIBLE);
+                    else if (filterBox.getVisibility() == View.VISIBLE)
+                        filterBox.setVisibility(View.GONE);
                 }
-                return false;
+            }
+        });
+
+        searchLocationBox.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
+            @Override
+            public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
+
+            }
+
+            @Override
+            public void onSearchAction(String currentQuery) {
+                searchLocationBox.setSearchBarTitle(currentQuery);
+            }
+        });
+
+        searchLocationBox.setOnQueryChangeListener(new FloatingSearchView.OnQueryChangeListener() {
+            @Override
+            public void onSearchTextChanged(String oldQuery, String newQuery) {
+                if (oldQuery.compareTo(newQuery) != 0)
+                    restartQuery = true;
             }
         });
 
@@ -262,6 +235,25 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             }
         });
 
+        filterBox.addTextChangedListener(new TextWatcher() {
+
+            String oldQuery;
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                oldQuery = s.toString();
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (s.toString().compareTo(oldQuery) != 0)
+                    restartQuery = true;
+            }
+        });
+
         // When the user clicks the Generate button.
         generate.setOnClickListener(new View.OnClickListener() {
 
@@ -275,12 +267,14 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     return;
                 }
 
+                filterBox.setVisibility(View.GONE);
+
                 // Clear all the markers on the map.
                 map.clear();
 
                 if (LocationProviderHelper.useGPS) {
 
-                    // If the user is using location, check to make sure the location is not null before beginning.
+                    // If the user is using location, check to make sure the location is not null before starting.
                     // Else, begin the AsyncTask.
                     Location location = locationHelper.getLocation();
                     if (location == null) {
@@ -296,17 +290,16 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                                 "Acquiring GPS signal may take up to a minute on some devices.");
                         alert.show();
                     } else {
-                        new GetJsonData().execute(String.valueOf(userLocationInfo.getText()),
+                        initialYelpQuery = new RunYelpQuery(String.valueOf(searchLocationBox.getQuery()),
                                 String.valueOf(filterBox.getText()),
                                 String.valueOf(location.getLatitude()),
-                                String.valueOf(location.getLongitude()));
+                                String.valueOf(location.getLongitude())).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                     }
                 } else {
 
-                    // If the user is using entering their location, check to make sure they have entered one.
+                    // If the user is entering their location, check to make sure they have entered one.
                     // Else, begin the AsyncTask.
-                    if (userLocationInfo.getText().length() == 0) {
-
+                    if (searchLocationBox.getQuery().length() == 0 && restaurants.size() == 0) {
                         AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
                         alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
                             @Override
@@ -318,24 +311,43 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         alert.setMessage("Please enter a valid address, city, zip code, or use GPS by clicking the icon.");
                         alert.show();
                     } else {
-                        new GetJsonData().execute(String.valueOf(userLocationInfo.getText()), String.valueOf(filterBox.getText()));
+                        initialYelpQuery = new RunYelpQuery(String.valueOf(searchLocationBox.getQuery()),
+                                String.valueOf(filterBox.getText())).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                     }
                 }
             }
         });
 
+        // Reset all cache for showcase id.
+        //MaterialShowcaseView.resetAll(getContext());
 
+        // A tutorial that displays only once explaining the input to the app.
+        MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), BuildConfig.VERSION_NAME);
+        ShowcaseConfig config = new ShowcaseConfig();
+        config.setDelay(250);
+        sequence.setConfig(config);
+
+        sequence.addSequenceItem(buildShowcaseView(searchLocationBox, new RectangleShape(0, 0),
+                "Enter any zip code, city, or address here.\n\n" +
+                "Click the GPS icon to use your current location.\n\n" +
+                "Filter your results if you're in the mood for something specific."
+        ));
+
+        sequence.start();
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-
-        super.onSaveInstanceState(outState);
-
         // https://code.google.com/p/gmaps-api-issues/issues/detail?id=6237#c9
         final Bundle mapViewSaveState = new Bundle(outState);
         mapView.onSaveInstanceState(mapViewSaveState);
         outState.putBundle("mapViewSaveState", mapViewSaveState);
+        outState.putString("locationQuery", searchLocationBox.getQuery());
+        outState.putString("filterQuery", String.valueOf(filterBox.getText()));
+        outState.putParcelable("currentRestaurant", currentRestaurant);
+        outState.putParcelableArrayList("restaurants", restaurants);
+        Log.d("CHRIS", "saved state");
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -343,6 +355,22 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         super.onPause();
         mapView.onPause();
 
+        // Try to cancel the AsyncTask.
+        if (initialYelpQuery != null) {
+            if (initialYelpQuery.getStatus() == AsyncTask.Status.RUNNING) {
+                initialYelpQuery.cancel(true);
+                enableGenerateButton();
+
+                if (mainRestaurantCardAdapter != null) {
+                    mainRestaurantCardAdapter.remove();
+                    mapCardContainer.setVisibility(View.GONE);
+                }
+            }
+        }
+
+        if (backgroundYelpQuery != null)
+            if (backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
+                backgroundYelpQuery.cancel(true);
     }
 
     @Override
@@ -359,6 +387,25 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     public void onDestroy() {
         super.onDestroy();
         mapView.onDestroy();
+
+        // Try to cancel the AsyncTask.
+        if (initialYelpQuery != null) {
+            if (initialYelpQuery.getStatus() == AsyncTask.Status.RUNNING) {
+                initialYelpQuery.cancel(true);
+                enableGenerateButton();
+
+                if (mainRestaurantCardAdapter != null) {
+                    mainRestaurantCardAdapter.remove();
+                    mapCardContainer.setVisibility(View.GONE);
+                }
+            }
+        }
+
+        if (backgroundYelpQuery != null)
+            if (backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING) {
+                backgroundYelpQuery.cancel(true);
+                enableGenerateButton();
+            }
     }
 
     @Override
@@ -373,34 +420,15 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     }
 
     /**
-     * Callback from MainActivity to respond to when permissions have changed.
-     *
-     * @param isGranted: if the permissions have been granted or denied
-     */
-    public void reactToPermissionsCallback(boolean isGranted) {
-
-        if (isGranted) {
-            Snackbar.make(rootLayout, "Permission granted, now you can access the GPS.",
-                    Snackbar.LENGTH_LONG).show();
-
-            locationHelper.requestLocation();
-            LocationProviderHelper.useGPS = true;
-        } else {
-            Snackbar.make(rootLayout, "Permission denied, you cannot access the GPS. " +
-                    "Please enter your location manually.", Snackbar.LENGTH_LONG).show();
-
-            LocationProviderHelper.useGPS = false;
-        }
-    }
-
-    /**
      * Function to hide the keyboard.
      *
      * @param activity: current Activity.
      */
     private void hideSoftKeyboard(Activity activity) {
-        InputMethodManager inputMethodManager = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(activity.getCurrentFocus().getWindowToken(), 0);
+        if (activity.getCurrentFocus() != null) {
+            InputMethodManager inputMethodManager = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+            inputMethodManager.hideSoftInputFromWindow(activity.getCurrentFocus().getWindowToken(), 0);
+        }
     }
 
     /**
@@ -420,36 +448,183 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 .build();
     }
 
+    private void disableGenerateButton() {
+        // Signal the task is running
+        taskRunning = true;
+        generate.setText(R.string.string_button_text_loading);
+        generate.setBackgroundColor(Color.GRAY);
+        generate.setEnabled(false);
+    }
+
+    private void enableGenerateButton() {
+        // Signal the task is finished
+        taskRunning = false;
+        generate.setText(R.string.string_button_text_generate);
+        generate.setBackgroundColor(generateBtnColor);
+        generate.setEnabled(true);
+    }
+
+    /**
+     * Function to query Yelp for restaurants. Returns an ArrayList of Restaurants.
+     * @param lat:      the user's latitude, null if @param input is not empty.
+     * @param lon:      the user's longitude, null if @param input is not empty..
+     * @param input     the user's location string, e.g. zip, city, etc.
+     * @param filter    the user's filter string, e.g. sushi, bbq, etc.
+     * @param offset    the offset for the Yelp query.
+     * @return          true if successful querying Yelp; false otherwise.
+     */
+    private boolean queryYelp(String lat, String lon, String input,
+                           String filter, int offset) {
+
+        OAuthRequest request;
+
+        if (LocationProviderHelper.useGPS) {
+            request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + filter +
+                    "&ll=" + lat + "," + lon + "&offset=" + offset);
+
+            request.setConnectTimeout(10, TimeUnit.SECONDS);
+            request.setReadTimeout(10, TimeUnit.SECONDS);
+
+            Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + filter +
+                    "&ll=" + lat + "," + lon + "&offset=" + offset);
+        } else {
+            request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + filter +
+                    "&location=" + input + "&offset=" + offset);
+
+            request.setConnectTimeout(10, TimeUnit.SECONDS);
+            request.setReadTimeout(10, TimeUnit.SECONDS);
+
+            Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + filter +
+                    "&location=" + input + "&offset=" + offset);
+        }
+
+        service.signRequest(accessToken, request);
+        Response response = request.send();
+
+        JSONArray jsonBusinessesArray;
+
+        try {
+            // Get JSON array that holds the restaurants from Yelp.
+            jsonBusinessesArray = new JSONObject(response.getBody())
+                    .getJSONArray("businesses");
+
+            int length = jsonBusinessesArray.length();
+
+            // This occurs if a network communication error occurs or if no restaurants were found.
+            if (length <= 0)
+                return false;
+
+            for (int i = 0; i < length; i++)
+                restaurants.add(convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(i)));
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Convert JSON to a Restaurant object that encapsulates a restaurant from Yelp.
+     *
+     * @param obj: JSONObejct that holds all restaurant info.
+     * @return Restaurant or null if an error occurs.
+     */
+    private Restaurant convertJSONToRestaurant(JSONObject obj) {
+        try {
+            // Getting the JSON array of categories
+            JSONArray categoriesJSON = obj.getJSONArray("categories");
+            ArrayList<String> categories = new ArrayList<>();
+
+            for (int i = 0; i < categoriesJSON.length(); i += 2)
+                for (int j = 0; j < categoriesJSON.getJSONArray(i).length(); j += 2)
+                    categories.add(categoriesJSON.getJSONArray(i).getString(j));
+
+            // Getting the restaurant's location information
+            JSONObject locationJSON = obj.getJSONObject("location");
+
+            double lat = locationJSON.getJSONObject("coordinate").getDouble("latitude");
+            double lon = locationJSON.getJSONObject("coordinate").getDouble("longitude");
+
+            float distance;
+            Location restaurantLoc = new Location("restaurantLoc");
+            restaurantLoc.setLatitude(lat);
+            restaurantLoc.setLongitude(lon);
+            if (LocationProviderHelper.useGPS) {
+                distance = locationHelper.getLocation().distanceTo(restaurantLoc);
+            } else {
+                Geocoder geocoder = new Geocoder(getContext());
+                List<Address> addressList = geocoder.getFromLocationName(searchLocationBox.getQuery(), 1);
+                double estimatedLat = addressList.get(0).getLatitude();
+                double estimatedLon = addressList.get(0).getLongitude();
+                Location estimatedLocation = new Location("estimatedLocation");
+                estimatedLocation.setLatitude(estimatedLat);
+                estimatedLocation.setLongitude(estimatedLon);
+                distance = estimatedLocation.distanceTo(restaurantLoc);
+            }
+            distance *= 0.000621371;    // Convert to miles
+
+            // Getting restaurant's address
+            JSONArray addressJSON = locationJSON.getJSONArray("display_address");
+            ArrayList<String> address = new ArrayList<>();
+
+            for (int i = 0; i < addressJSON.length(); i++)
+                address.add(addressJSON.getString(i));
+
+            // Get deals if JSON contains deals object.
+            String deals;
+            try {
+                JSONArray dealsArray = obj.getJSONArray("deals");
+                ArrayList<String> dealsList = new ArrayList<>();
+
+                for (int i = 0; i < dealsArray.length(); i++) {
+                    JSONObject jsonObject = dealsArray.getJSONObject(i);
+                    dealsList.add(jsonObject.getString("title"));
+                }
+                deals = dealsList.toString().replace("[", "").replace("]", "").trim();
+            } catch (Exception ignored) {
+                deals = "";
+            }
+
+            // Construct a new Restaurant object with all the info we gathered above and return it
+            return new Restaurant(obj.getString("name"), (float) obj.getDouble("rating"),
+                    obj.getString("rating_img_url_large"), obj.getString("image_url"), obj.getInt("review_count"),
+                    obj.getString("url"), categories, address, deals, distance, lat, lon);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     // Async task that connects to Yelp's API and queries for restaurants based on location / zip code.
-    public class GetJsonData extends AsyncTask<String, Void, Restaurant> {
+    public class RunYelpQuery extends AsyncTask<Void, Void, Restaurant> {
 
-        // Holds a copy of the parameters in case we need to make another call (recursive) to this AsyncTask.
         String[] params;
+        String userInputStr;
+        String userFilterStr;
+        boolean successfulQuery;
 
-        // We don't want to display a restaurant that is closed to the user.
-        boolean isRestaurantClosed = false;
+        public RunYelpQuery(String...params) {
+            this.params = params;
+            userInputStr = params[0];
+            userFilterStr = params[1];
+        }
 
         @Override
-        protected Restaurant doInBackground(String... params) {
+        protected void onPreExecute() {
+            super.onPreExecute();
+            disableGenerateButton();
+        }
 
-            this.params = params;
+        @Override
+        protected Restaurant doInBackground(Void... aVoid) {
 
-            // Signal the task is running
-            taskRunning = true;
+            // Check for parameters so we can send the appropriate request based on user input.
+            String lat = "";
+            String lon = "";
 
             try {
-                // Build OAuth request
-                OAuthService service = new ServiceBuilder().provider(TwoStepOAuth.class).apiKey(TwoStepOAuth.getConsumerKey())
-                        .apiSecret(TwoStepOAuth.getConsumerSecret()).build();
-
-                Token accessToken = new Token(TwoStepOAuth.getToken(), TwoStepOAuth.getTokenSecret());
-
-                // Check for parameters so we can send the appropriate request based on user input.
-                String lat = "";
-                String lon = "";
-                String userInputStr = params[0];
-                String userFilterStr = params[1];
-
                 // If the user entered some input, make sure to encode all spaces and "+" for URL query.
                 if (userInputStr.length() != 0) {
                     userInputStr = userInputStr.replaceAll(" ", "+");
@@ -462,7 +637,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     // Add Yelp API query verb.
                     userFilterStr = String.format("term=%s", userFilterStr);
                 } else {
-
                     // Default search term.
                     userFilterStr = "term=food";
                 }
@@ -472,89 +646,47 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     lat = params[2];
                     lon = params[3];
                 }
-
-                OAuthRequest request;
-                int startingOffset;
-
-                // Get a random offset for Yelp results
-                startingOffset = new Random().nextInt(2) * 20;
-
-                if (LocationProviderHelper.useGPS) {
-                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + userFilterStr +
-                            "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
-
-                    request.setConnectTimeout(15, TimeUnit.SECONDS);
-                    request.setReadTimeout(15, TimeUnit.SECONDS);
-
-                    Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + userFilterStr +
-                            "&ll=" + lat + "," + lon + "&offset=" + startingOffset);
-                } else {
-                    request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + userFilterStr +
-                            "&location=" + userInputStr + "&offset=" + startingOffset);
-
-                    request.setConnectTimeout(15, TimeUnit.SECONDS);
-                    request.setReadTimeout(15, TimeUnit.SECONDS);
-
-                    Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + userFilterStr +
-                            "&location=" + userInputStr + "&offset=" + startingOffset);
-                }
-
-                service.signRequest(accessToken, request);
-                Response response = request.send();
-
-                // Parsing JSON response
-                JSONObject mainJsonObject = null;
-                JSONArray jsonBusinessesArray = null;
-
-                mainJsonObject = new JSONObject(response.getBody());
-                jsonBusinessesArray = mainJsonObject.getJSONArray("businesses");
-
-                int length = jsonBusinessesArray.length();
-
-                // This occurs if a network communication error occurs or if no restaurants were found.
-                if (length <= 0) {
-                    return null;
-                }
-
-                int index = new Random().nextInt(length);
-
-                isRestaurantClosed = jsonBusinessesArray.getJSONObject(index).getBoolean("is_closed");
-                if (isRestaurantClosed) {
-                    return null;
-                }
-
-                // Convert a random restaurant from json to Restaurant object
-                return convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(index));
-
-            } catch (Exception e) {
-                e.printStackTrace();
-
-                // Signal the task has finished (failed task is still a finished task)
-                taskRunning = false;
-
-                return null;
             }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            if (restartQuery) {
+                restaurants.clear();
+                restartQuery = false;
+            }
+
+            // Get restaurants only when the current list is empty.
+            Restaurant chosenRestaurant = null;
+            if (restaurants == null || restaurants.size() == 0) {
+                successfulQuery = queryYelp(lat, lon, userInputStr, userFilterStr, 0);
+
+                if (successfulQuery) {
+                    chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
+                    restaurants.remove(chosenRestaurant);
+                }
+
+                runSecondQuery = true;
+            }
+            else if (restaurants.size() != 0) {
+                chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
+                restaurants.remove(chosenRestaurant);
+            }
+
+            // Return randomly chosen restaurant.
+            Log.d("CHRIS", "Query was " + successfulQuery);
+            Log.d("CHRIS", "Restaurants left: " + restaurants.size());
+            return chosenRestaurant;
         }
 
         // Set UI appropriate UI elements to display mRestaurant info.
         @Override
         protected void onPostExecute(Restaurant restaurant) {
 
-            super.onPostExecute(restaurant);
-
-            // If restaurant is closed, run this AsyncTask again.
-            if (isRestaurantClosed) {
-                new GetJsonData().execute(params);
-                return;
-            }
-
             if (restaurant == null) {
-                Toast.makeText(getActivity(), "Error during transmission. Either no restaurants were " +
-                        "found in your area or an internet communication error occurred. Try again.", Toast.LENGTH_SHORT).show();
-
-                // Signal the task has finished (failed task is still a finished task)
-                taskRunning = false;
-
+                Log.d("CHRIS", "Error during transmission");
+                restaurants.clear();
+                enableGenerateButton();
                 return;
             }
 
@@ -579,8 +711,12 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
             mapCardContainer.setVisibility(View.VISIBLE);
 
-            // Signal the task as completed
-            taskRunning = false;
+            enableGenerateButton();
+
+            if (runSecondQuery) {
+                backgroundYelpQuery = new RunYelpQueryBackground().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, this.params);
+                runSecondQuery = false;
+            }
 
             // A tutorial that displays only once explaining the action that can be done on the restaurant card.
             MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), "2");
@@ -591,92 +727,58 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             sequence.addSequenceItem(buildShowcaseView(recyclerView, new RectangleShape(0, 0),
                     "Swipe left to dismiss. Swipe right to open in Yelp. Tap bookmark button to save it for later."));
 
-            sequence.addSequenceItem(buildShowcaseView(((MainActivity) getActivity()).getMenuItemView(),
+            sequence.addSequenceItem(buildShowcaseView(((MainActivity) getActivity()).getMenuItemView(R.id.action_saved_list),
                     new CircleShape(), "Tap here to view your saved list."));
 
             sequence.start();
         }
+    }
 
-        /**
-         * Convert JSON to a Restaurant object that encapsulates a restaurant from Yelp.
-         *
-         * @param obj: JSONObejct that holds all restaurant info.
-         * @return Restaurant or null if an error occurs.
-         */
-        private Restaurant convertJSONToRestaurant(JSONObject obj) {
+    // Async task that runs in the background to query more restaurants from Yelp while the user
+    // goes through the initial list of restaurants.
+    public class RunYelpQueryBackground extends AsyncTask<String, Void, Void> {
+
+        @Override
+        protected Void doInBackground(String... params) {
+
+            // Check for parameters so we can send the appropriate request based on user input.
+            String lat = "";
+            String lon = "";
+            String userInputStr = params[0];
+            String userFilterStr = params[1];
+
             try {
-
-                // Getting the JSON array of categories
-                JSONArray categoriesJSON = obj.getJSONArray("categories");
-                ArrayList<String> categories = new ArrayList<>();
-
-                for (int i = 0; i < categoriesJSON.length(); i += 2) {
-                    for (int j = 0; j < categoriesJSON.getJSONArray(i).length(); j += 2) {
-                        categories.add(categoriesJSON.getJSONArray(i).getString(j));
-                    }
+                // If the user entered some input, make sure to encode all spaces and "+" for URL query.
+                if (userInputStr.length() != 0) {
+                    userInputStr = userInputStr.replaceAll(" ", "+");
                 }
 
-                // Getting the restaurant's location information
-                JSONObject locationJSON = obj.getJSONObject("location");
+                // If the user entered a filter, make sure to encode all spaces and "+" for URL query.
+                if (userFilterStr.length() != 0) {
+                    userFilterStr = userFilterStr.replaceAll(" ", "+");
 
-                double lat = locationJSON.getJSONObject("coordinate").getDouble("latitude");
-                double lon = locationJSON.getJSONObject("coordinate").getDouble("longitude");
-
-                float distance = 0;
-                Location restaurantLoc = new Location("restaurantLoc");
-                restaurantLoc.setLatitude(lat);
-                restaurantLoc.setLongitude(lon);
-                if (LocationProviderHelper.useGPS) {
-                    distance = locationHelper.getLocation().distanceTo(restaurantLoc);
+                    // Add Yelp API query verb.
+                    userFilterStr = String.format("term=%s", userFilterStr);
                 } else {
-                    Geocoder geocoder = new Geocoder(getContext());
-                    List<Address> addressList = geocoder.getFromLocationName(userLocationInfo.getText().toString(), 1);
-                    double estimatedLat = addressList.get(0).getLatitude();
-                    double estimatedLon = addressList.get(0).getLongitude();
-                    Location estimatedLocation = new Location("estimatedLocation");
-                    estimatedLocation.setLatitude(estimatedLat);
-                    estimatedLocation.setLongitude(estimatedLon);
-                    distance = estimatedLocation.distanceTo(restaurantLoc);
-                }
-                distance *= 0.000621371;    // Convert to miles
-
-                // Getting restaurant's address
-                JSONArray addressJSON = locationJSON.getJSONArray("display_address");
-                ArrayList<String> address = new ArrayList<>();
-
-                for (int i = 0; i < addressJSON.length(); i++) {
-                    address.add(addressJSON.getString(i));
+                    // Default search term.
+                    userFilterStr = "term=food";
                 }
 
-                // Get deals if JSON contains deals object.
-                String deals = "";
-                try {
-                    JSONArray dealsArray = obj.getJSONArray("deals");
-                    ArrayList<String> dealsList = new ArrayList<>();
-
-                    for (int i = 0; i < dealsArray.length(); i++) {
-                        JSONObject jsonObject = dealsArray.getJSONObject(i);
-                        dealsList.add(jsonObject.getString("title"));
-                    }
-                    deals = dealsList.toString().replace("[", "").replace("]", "").trim();
-                } catch (Exception ignored) {
-                    deals = "";
+                // If we have 4 parameters, then the user selected location and we must grab the lat / long.
+                if (params.length == 4) {
+                    lat = params[2];
+                    lon = params[3];
                 }
-
-                // Construct a new Restaurant object with all the info we gathered above and return it
-                Restaurant restaurant = new Restaurant(obj.getString("name"), (float) obj.getDouble("rating"),
-                        obj.getString("rating_img_url_large"), obj.getString("image_url"), obj.getInt("review_count"),
-                        obj.getString("url"), categories, address, deals, distance, lat, lon);
-
-                return restaurant;
-            } catch (JSONException | IOException e) {
-                e.printStackTrace();
-
-                // Signal the task has finished (failed task is still a finished task)
-                taskRunning = false;
-
-                return null;
             }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            Log.d("CHRIS", "About to query for new restaurants");
+            queryYelp(lat, lon, userInputStr, userFilterStr, 20);
+            Log.d("CHRIS", "Added all, now with " + restaurants.size());
+
+            return null;
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.chris.randomrestaurantgenerator.utils;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -12,12 +11,16 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.chris.randomrestaurantgenerator.R;
+import com.arlib.floatingsearchview.FloatingSearchView;
 
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.support.v4.content.ContextCompat.checkSelfPermission;
 
 /**
@@ -29,20 +32,27 @@ public class LocationProviderHelper {
     public static final int MY_LOCATION_REQUEST_CODE = 1;
     public static boolean useGPS = false;
 
+    private final String INFO_TEXT = "Current Location";
+
     private Activity activity;
+    private View view;
     private LocationManager locationManager;
     private LocationListener locationListener;
     private Location location;
-    private TextView userLocationInfoBox;
+    private FloatingSearchView searchLocationBox;
     private ProgressDialog dialog;
     private String PROVIDER;
-    private String infoText = "Current Location";
 
-    public LocationProviderHelper(final Activity act, final View view) {
+    private SharedPrefsHelper sharedPrefsHelper;
+
+    public LocationProviderHelper(final Activity act, final View view, FloatingSearchView infoBox) {
 
         this.activity = act;
+        this.view = view;
         this.dialog = new ProgressDialog(this.activity);
-        this.userLocationInfoBox = (TextView) view.findViewById(R.id.userLocationInfo);
+        this.searchLocationBox = infoBox;
+
+        this.sharedPrefsHelper = new SharedPrefsHelper(this.activity);
 
         // Acquire a reference to the system Location Manager
         locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
@@ -51,14 +61,14 @@ public class LocationProviderHelper {
         locationListener = new LocationListener() {
             public void onLocationChanged(Location loc) {
                 location = loc;
-                Toast.makeText(activity, "Got location: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Location acquired: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
                 dismissLocationUpdater();
 
                 if (PROVIDER.equals(LocationManager.GPS_PROVIDER))
-                    userLocationInfoBox.setText(String.format("%s (GPS)", infoText));
+                    searchLocationBox.setSearchText(String.format("%s (GPS)", INFO_TEXT));
                 else if (PROVIDER.equals(LocationManager.NETWORK_PROVIDER))
-                    userLocationInfoBox.setText(String.format("%s (NETWORK)", infoText));
+                    searchLocationBox.setSearchText(String.format("%s (NETWORK)", INFO_TEXT));
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -85,16 +95,65 @@ public class LocationProviderHelper {
     }
 
     public void requestLocation() {
+        boolean permissionsDenied =
+                checkSelfPermission(activity, ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED &&
+                checkSelfPermission(activity, ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED;
 
-        // If location permissions are denied, then try to request them.
-        // Else, proceed with getting Location.
-        if (checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (permissionsDenied) {
+            Log.d("CHRIS", "permissions denied");
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                activity.requestPermissions(new String[]{Manifest.permission_group.LOCATION}, MY_LOCATION_REQUEST_CODE);
+                boolean shouldShowRationale =
+                        ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_FINE_LOCATION) ||
+                        ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_COARSE_LOCATION);
+
+                // Alert the user that permission is required if this is the first time.
+                if (sharedPrefsHelper.checkFirstTimeRequestingLocation()) {
+                    sharedPrefsHelper.modifyFirstTimeRequestingLocation(false);
+                    Log.d("CHRIS", "First time and shouldShow == " + shouldShowRationale);
+
+                    final Snackbar snackbar = Snackbar.make(view, "Location permissions are needed to use GPS. Please allow them.", Snackbar.LENGTH_INDEFINITE);
+                    snackbar.setAction("OK", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            snackbar.dismiss();
+                        }
+                    }).show();
+                } else {
+                    // If it is not the first time, then the user has already pressed "Deny" at least once.
+                    if (shouldShowRationale) {
+                        Log.d("CHRIS", "Not first time and should show");
+
+                        final Snackbar snackbar = Snackbar.make(view, "Location permissions are needed to use GPS. Please allow them.", Snackbar.LENGTH_INDEFINITE);
+                        snackbar.setAction("OK", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                snackbar.dismiss();
+                            }
+                        }).show();
+                    } else {
+                        // User has elected to deny all permissions; must enter location manually.
+                        // Most likely "Do not ask again" has been checked.
+                        Log.d("CHRIS", "Not first time and should not show");
+
+                        final Snackbar snackbar = Snackbar.make(view, "Location permissions denied. Please enter location manually.", Snackbar.LENGTH_INDEFINITE);
+                        snackbar.setAction("OK", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                snackbar.dismiss();
+                            }
+                        }).show();
+                    }
+                }
+
+                /**
+                 * Request permission regardless of the outcome above.
+                 * Because if the permissions are denied, the method below will just do nothing
+                 * and will have no side effects.
+                 */
+                activity.requestPermissions(new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, MY_LOCATION_REQUEST_CODE);
             }
         } else {
-
             // Check which Location provider is available to us.
             if (this.locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 this.PROVIDER = LocationManager.GPS_PROVIDER;
@@ -134,7 +193,7 @@ public class LocationProviderHelper {
                     dialog.dismiss();
                     dismissLocationUpdater();
                     useGPS = false;
-                    userLocationInfoBox.setText("");
+                    searchLocationBox.setSearchText("");
                 }
             });
             dialog.show();
@@ -142,11 +201,13 @@ public class LocationProviderHelper {
     }
 
     public void dismissLocationUpdater() {
-        if (checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                activity.requestPermissions(new String[]{Manifest.permission_group.LOCATION}, MY_LOCATION_REQUEST_CODE);
-            }
+        boolean permissionsDenied =
+                checkSelfPermission(activity, ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED &&
+                checkSelfPermission(activity, ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED;
+
+        if (permissionsDenied) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                activity.requestPermissions(new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, MY_LOCATION_REQUEST_CODE);
         } else
             this.locationManager.removeUpdates(locationListener);
     }
