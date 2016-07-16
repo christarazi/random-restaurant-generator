@@ -205,16 +205,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         filterBox.setVisibility(View.VISIBLE);
 
                         // Show tutorial about entering multiple filters.
-                        MaterialShowcaseSequence filterShowcase = new MaterialShowcaseSequence(getActivity(), BuildConfig.VERSION_NAME + "FILTER");
-                        ShowcaseConfig config = new ShowcaseConfig();
-                        config.setDelay(250);
-                        filterShowcase.setConfig(config);
-
-                        filterShowcase.addSequenceItem(buildShowcaseView(filterBox, new RectangleShape(0, 0),
-                                "In the mood for multiple things? List your filters separated by comma to combine the results!"
-                        ));
-
-                        filterShowcase.start();
+                        displayShowcaseViewFilterBox();
                     }
                     else if (filterBox.getVisibility() == View.VISIBLE)
                         filterBox.setVisibility(View.GONE);
@@ -224,8 +215,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
         searchLocationBox.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
-            public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
-            }
+            public void onSuggestionClicked(SearchSuggestion searchSuggestion) {}
 
             @Override
             public void onSearchAction(String currentQuery) {
@@ -239,7 +229,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    hideSoftKeyboard(getActivity());
+                    hideSoftKeyboard();
                     generate.performClick();
                     return true;
                 }
@@ -253,8 +243,10 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
 
-                // If the user doesn't wait on the task to complete, warn them it is still running
-                // so we can prevent a long stack of requests from piling up.
+                /**
+                 * If the user doesn't wait on the task to complete, warn them it is still running
+                 * so we can prevent a long stack of requests from piling up.
+                 */
                 if (taskRunning) {
                     Toast.makeText(getActivity(), R.string.string_task_running_msg, Toast.LENGTH_SHORT).show();
                     return;
@@ -262,6 +254,10 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                 filterBox.setVisibility(View.GONE);
 
+                /**
+                 * Initialize searchQuery and filterQuery if they're empty.
+                 * Else set restartQuery to true if the queries have changed.
+                 */
                 if (searchQuery.isEmpty() && filterQuery.isEmpty()) {
                     searchQuery = searchLocationBox.getQuery();
                     filterQuery = filterBox.getText().toString();
@@ -276,35 +272,33 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     searchQuery = searchLocationBox.getQuery();
                     filterQuery = filterBox.getText().toString();
 
-                    //We want to use GPS if searchQuery contains the string "Current Location".
-                    LocationProviderHelper.useGPS = searchQuery.contains(getActivity().getString(R.string.string_current_location));
+                    // We want to use GPS if searchQuery contains the string "Current Location".
+                    LocationProviderHelper.useGPS = searchQuery.contains(getActivity()
+                            .getString(R.string.string_current_location));
                 }
 
                 if (LocationProviderHelper.useGPS) {
 
-                    // If the user is using location, check to make sure the location is not null before starting.
-                    // Else, begin the AsyncTask.
+                    /**
+                     * Check to make sure the location is not null before starting.
+                     * Else, begin the AsyncTask.
+                     */
                     Location location = locationHelper.getLocation();
                     if (location == null) {
-                        AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
-                        alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        });
-                        alert.setTitle("Error");
-                        alert.setMessage(getActivity().getString(R.string.string_location_not_found));
-                        alert.show();
+                        displayAlertDialog(R.string.string_location_not_found, "Error");
                     } else {
 
-                        // Split the filters by comma if the user wants multiple filters.
-                        // Run separate query for each filter.
-                        Log.d("RRG", "contains all: " + multiFilters.containsAll((Arrays.asList(filterBox.getText().toString().split(",")))));
-                        if (filterBox.getText().toString().contains(",") &&
-                                !multiFilters.containsAll((Arrays.asList(filterBox.getText().toString().split(","))))) {
+                        String filterBoxText = filterBox.getText().toString();
+                        List<String> filterList = Arrays.asList(filterBox.getText().toString().split(","));
+
+                        /**
+                         * Split the filters by comma if the user wants multiple filters.
+                         * Run separate query for each filter.
+                         */
+                        Log.d("RRG", "contains all: " + multiFilters.containsAll(filterList));
+                        if (filterBoxText.contains(",") && !multiFilters.containsAll(filterList)) {
                             multiFilters.clear();
-                            multiFilters.addAll(Arrays.asList(filterBox.getText().toString().split(",")));
+                            multiFilters.addAll(filterList);
 
                             initialYelpQuery = new RunYelpQuery(
                                     false,
@@ -322,7 +316,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                              */
                             for (String filter : multiFilters.subList(1, multiFilters.size())) {
                                 backgroundYelpQuery = new RunYelpQueryBackground(0)
-                                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
+                                        .executeOnExecutor(
+                                                AsyncTask.THREAD_POOL_EXECUTOR,
                                                 String.valueOf(searchLocationBox.getQuery()),
                                                 filter.trim(),
                                                 String.valueOf(location.getLatitude()),
@@ -341,34 +336,32 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     }
                 } else {
 
-                    // If the user is entering their location, check to make sure they have entered one.
-                    // Else, begin the AsyncTask.
+                    String filterBoxText = filterBox.getText().toString();
+                    List<String> filterList = Arrays.asList(filterBox.getText().toString().split(","));
+
+                    /**
+                     * Verify that the user has actually entered a location.
+                     * Else, begin the AsyncTask.
+                     */
                     if (searchLocationBox.getQuery().length() == 0 && restaurants.size() == 0) {
-                        AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
-                        alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                            }
-                        });
-                        alert.setTitle("Error");
-                        alert.setMessage(R.string.string_enter_valid_location);
-                        alert.show();
+                        displayAlertDialog(R.string.string_enter_valid_location, "Error");
                     } else {
 
-                        // Split the filters by comma if the user wants multiple filters.
-                        // Run separate query for each filter.
-                        Log.d("RRG", "contains all: " + multiFilters.containsAll((Arrays.asList(filterBox.getText().toString().split(",")))));
+                        Log.d("RRG", "contains all: " + multiFilters.containsAll(filterList));
                         for (String a : multiFilters) {
                             Log.d("RRG", "MultiFilters: " + a);
                         }
-                        for (String a : Arrays.asList(filterBox.getText().toString().split(","))) {
-                            Log.d("RRG", "asList: " + a);
+                        for (String a : filterList) {
+                            Log.d("RRG", "filterList: " + a);
                         }
-                        if (filterBox.getText().toString().contains(",") &&
-                                !multiFilters.containsAll((Arrays.asList(filterBox.getText().toString().split(","))))) {
+
+                        /**
+                         * Split the filters by comma if the user wants multiple filters.
+                         * Run separate query for each filter.
+                         */
+                        if (filterBoxText.contains(",") && !multiFilters.containsAll(filterList)) {
                             multiFilters.clear();
-                            multiFilters.addAll(Arrays.asList(filterBox.getText().toString().split(",")));
+                            multiFilters.addAll(filterList);
 
                             initialYelpQuery = new RunYelpQuery(
                                     false,
@@ -384,7 +377,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                              */
                             for (String filter : multiFilters.subList(1, multiFilters.size())) {
                                 backgroundYelpQuery = new RunYelpQueryBackground(0)
-                                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
+                                        .executeOnExecutor(
+                                                AsyncTask.THREAD_POOL_EXECUTOR,
                                                 String.valueOf(searchLocationBox.getQuery()),
                                                 filter.trim());
                             }
@@ -516,10 +510,9 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
     /**
      * Function to hide the keyboard.
-     *
-     * @param activity: current Activity.
      */
-    private void hideSoftKeyboard(Activity activity) {
+    private void hideSoftKeyboard() {
+        Activity activity = getActivity();
         if (activity.getCurrentFocus() != null) {
             InputMethodManager inputMethodManager = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
             inputMethodManager.hideSoftInputFromWindow(activity.getCurrentFocus().getWindowToken(), 0);
@@ -529,9 +522,9 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     /**
      * Helper function to build a custom ShowcaseView for a sequence.
      *
-     * @param target:      the target view that will be highlighted
-     * @param shape:       the type of shape
-     * @param contentText: the text to be displayed
+     * @param target:      the target view that will be highlighted.
+     * @param shape:       the type of shape.
+     * @param contentText: the text to be displayed.
      */
     private MaterialShowcaseView buildShowcaseView(View target, uk.co.deanwild.materialshowcaseview.shape.Shape shape, String contentText) {
         return new MaterialShowcaseView.Builder(getActivity())
@@ -543,6 +536,9 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 .build();
     }
 
+    /**
+     * Function to disable the generate button.
+     */
     private void disableGenerateButton() {
         // Signal the task is running
         taskRunning = true;
@@ -551,6 +547,9 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         generate.setEnabled(false);
     }
 
+    /**
+     * Function to enable the generate button.
+     */
     private void enableGenerateButton() {
         // Signal the task is finished
         taskRunning = false;
@@ -563,10 +562,44 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     }
 
     /**
+     * Function to display the MaterialShowcaseView for filterBox.
+     */
+    private void displayShowcaseViewFilterBox() {
+        MaterialShowcaseSequence filterShowcase = new MaterialShowcaseSequence(getActivity(), BuildConfig.VERSION_NAME + "FILTER");
+        ShowcaseConfig config = new ShowcaseConfig();
+        config.setDelay(250);
+        filterShowcase.setConfig(config);
+
+        filterShowcase.addSequenceItem(buildShowcaseView(filterBox, new RectangleShape(0, 0),
+                "In the mood for multiple things? List your filters separated by comma to combine the results!"
+        ));
+
+        filterShowcase.start();
+    }
+
+    /**
+     * Helper function to display an AlertDialog
+     * @param stringToDisplay:  the string to display in the alert.
+     * @param title:            the title of the dialog.
+     */
+    private void displayAlertDialog(int stringToDisplay, String title) {
+        AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
+        alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        alert.setTitle(title);
+        alert.setMessage(getActivity().getString(stringToDisplay));
+        alert.show();
+    }
+
+    /**
      * Function to query Yelp for restaurants. Returns an ArrayList of Restaurants.
      *
      * @param lat:   the user's latitude, null if @param input is not empty.
-     * @param lon:   the user's longitude, null if @param input is not empty..
+     * @param lon:   the user's longitude, null if @param input is not empty.
      * @param input  the user's location string, e.g. zip, city, etc.
      * @param filter the user's filterBox string, e.g. sushi, bbq, etc.
      * @param offset the offset for the Yelp query.
