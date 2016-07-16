@@ -3,7 +3,6 @@ package com.chris.randomrestaurantgenerator.views;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -120,11 +119,6 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             ArrayList<Restaurant> r = dbHelper.getAll();
-            Log.d("CHRIS", "Removed from db");
-
-            for (int i = 0; i < r.size(); i++) {
-                Log.d("CHRIS", r.get(i).getName());
-            }
         }
     }
 
@@ -140,11 +134,6 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             ArrayList<Restaurant> r = dbHelper.getAll();
-            Log.d("CHRIS", "Removed all from db");
-
-            for (int i = 0; i < r.size(); i++) {
-                Log.d("CHRIS", r.get(i).getName());
-            }
         }
     }
 

@@ -9,7 +9,6 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -182,7 +181,6 @@ public class SavedListFragment extends Fragment {
         protected void onPostExecute(Void aVoid) {
             progressBar.progressiveStop();
             progressBar.setVisibility(View.GONE);
-            Log.d("CHRIS", "Finished getting all");
 
             if (!savedListHolder.getSavedList().isEmpty())
                 showRestaurants();

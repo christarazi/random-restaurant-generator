@@ -188,7 +188,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             searchLocationBox.setSearchText(savedInstanceState.getString("locationQuery"));
             filterBox.setText(savedInstanceState.getString("filterQuery"));
             restaurants = savedInstanceState.getParcelableArrayList("restaurants");
-            Log.d("CHRIS", "restored state");
         }
 
         // Define actions on menu button clicks inside searchLocationBox.
@@ -269,7 +268,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     if (searchQuery.compareTo(searchLocationBox.getQuery()) != 0 ||
                             filterQuery.compareTo(filterBox.getText().toString()) != 0) {
 
-                        Log.d("CHRIS", "restarting query");
                         restartQuery = true;
                         restaurants.clear();
 
@@ -325,8 +323,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                     // If the user is entering their location, check to make sure they have entered one.
                     // Else, begin the AsyncTask.
-                    Log.d("CHRIS", "Query: " + searchLocationBox.getQuery());
-                    Log.d("CHRIS", "Query length: " + searchLocationBox.getQuery().length());
                     if (searchLocationBox.getQuery().length() == 0 && restaurants.size() == 0) {
                         AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
                         alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
@@ -389,7 +385,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         outState.putString("filterQuery", String.valueOf(filterBox.getText()));
         outState.putParcelable("currentRestaurant", currentRestaurant);
         outState.putParcelableArrayList("restaurants", restaurants);
-        Log.d("CHRIS", "saved state");
         super.onSaveInstanceState(outState);
     }
 
@@ -545,7 +540,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             request.setConnectTimeout(10, TimeUnit.SECONDS);
             request.setReadTimeout(10, TimeUnit.SECONDS);
 
-            Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + filter +
+            Log.d("RRG", "request made: " + "https://api.yelp.com/v2/search?" + filter +
                     "&ll=" + lat + "," + lon + "&offset=" + offset);
         } else {
             request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + filter +
@@ -554,7 +549,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             request.setConnectTimeout(10, TimeUnit.SECONDS);
             request.setReadTimeout(10, TimeUnit.SECONDS);
 
-            Log.d("Chris", "request made: " + "https://api.yelp.com/v2/search?" + filter +
+            Log.d("RRG", "request made: " + "https://api.yelp.com/v2/search?" + filter +
                     "&location=" + input + "&offset=" + offset);
         }
 
@@ -777,8 +772,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             }
 
             // Return randomly chosen restaurant.
-            Log.d("CHRIS", "Query was " + successfulQuery);
-            Log.d("CHRIS", "Restaurants left: " + restaurants.size());
             return chosenRestaurant;
         }
 
@@ -787,9 +780,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         protected void onPostExecute(Restaurant restaurant) {
 
             if (restaurant == null) {
-                Log.d("CHRIS", "Error during transmission");
-                Log.d("CHRIS", "errorInQuery: " + errorInQuery);
-
                 if (errorInQuery == TypeOfError.NO_RESTAURANTS) {
                     Toast.makeText(getContext(),
                             "No restaurants found at this location, please enter a different location.",
@@ -880,9 +870,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 e.printStackTrace();
             }
 
-            Log.d("CHRIS", "About to query for new restaurants");
             queryYelp(lat, lon, userInputStr, userFilterStr, 20);
-            Log.d("CHRIS", "Added all, now with " + restaurants.size());
 
             return null;
         }

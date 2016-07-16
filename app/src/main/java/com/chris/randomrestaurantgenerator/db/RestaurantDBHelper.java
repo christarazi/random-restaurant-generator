@@ -61,15 +61,12 @@ public class RestaurantDBHelper extends SQLiteOpenHelper {
                 + COLUMN_LON + " REAL"
                 + ")";
         db.execSQL(CREATE_RESTAURANTS_TABLE);
-
-        Log.d("CHRIS", "SQLite table created");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_RESTAURANTS);
         onCreate(db);
-        Log.d("CHRIS", "SQLite table dropped");
     }
 
     public long insert(Restaurant res) {
@@ -158,7 +155,7 @@ public class RestaurantDBHelper extends SQLiteOpenHelper {
             if (cursor != null)
                 cursor.close();
             else
-                Log.d("CHRIS", "Cursor is null");
+                Log.d("RRG", "Cursor is null");
         }
 
         return restaurants;

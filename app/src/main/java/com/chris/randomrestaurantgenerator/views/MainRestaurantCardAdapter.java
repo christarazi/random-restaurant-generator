@@ -4,7 +4,6 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -151,11 +150,6 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             ArrayList<Restaurant> r = dbHelper.getAll();
-            Log.d("CHRIS", "Inserted into db");
-
-            for (int i = 0; i < r.size(); i++) {
-                Log.d("CHRIS", r.get(i).getName());
-            }
         }
     }
 }

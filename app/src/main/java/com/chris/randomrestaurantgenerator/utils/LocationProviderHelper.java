@@ -13,7 +13,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -133,8 +132,6 @@ public class LocationProviderHelper {
                         checkSelfPermission(activity, ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED;
 
         if (permissionsDenied) {
-            Log.d("CHRIS", "permissions denied");
-
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 boolean shouldShowRationale =
                         ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_FINE_LOCATION) ||
@@ -143,7 +140,6 @@ public class LocationProviderHelper {
                 // Alert the user that permission is required if this is the first time.
                 if (sharedPrefsHelper.checkFirstTimeRequestingLocation()) {
                     sharedPrefsHelper.modifyFirstTimeRequestingLocation(false);
-                    Log.d("CHRIS", "First time and shouldShow == " + shouldShowRationale);
 
                     final Snackbar snackbar = Snackbar.make(view, "Location permissions are needed to use GPS. Please allow them.", Snackbar.LENGTH_INDEFINITE);
                     snackbar.setAction("OK", new View.OnClickListener() {
@@ -156,7 +152,6 @@ public class LocationProviderHelper {
                 } else {
                     // If it is not the first time, then the user has already pressed "Deny" at least once.
                     if (shouldShowRationale) {
-                        Log.d("CHRIS", "Not first time and should show");
 
                         final Snackbar snackbar = Snackbar.make(view, "Location permissions are needed to use GPS. Please allow them.", Snackbar.LENGTH_INDEFINITE);
                         snackbar.setAction("OK", new View.OnClickListener() {
@@ -169,7 +164,6 @@ public class LocationProviderHelper {
                     } else {
                         // User has elected to deny all permissions; must enter location manually.
                         // Most likely "Do not ask again" has been checked.
-                        Log.d("CHRIS", "Not first time and should not show");
 
                         final Snackbar snackbar = Snackbar.make(view, "Location permissions denied. Please enter location manually.", Snackbar.LENGTH_INDEFINITE);
                         snackbar.setAction("OK", new View.OnClickListener() {
