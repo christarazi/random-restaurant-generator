@@ -9,5 +9,10 @@
     <string name="string_location_is_off">Location is off. Please enable Location in your settings.</string>
     <string name="string_getting_location">Getting location…</string>
     <string name="string_current_location">Current Location</string>
+    <string name="string_location_not_found">"Location has not been found yet. Please try again. Acquiring GPS signal may take up to a minute on some devices."</string>
+    <string name="string_enter_valid_location">Please enter a valid address, city, zip code, or use GPS by clicking the icon.</string>
+    <string name="string_no_restaurants_found">No restaurants found at this location, please enter a different location.</string>
+    <string name="string_timed_out_msg">Connection timed out, check your internet connection and try again.</string>
+    <string name="string_task_running_msg">Task still running, please wait.</string>
 
 </resources>
