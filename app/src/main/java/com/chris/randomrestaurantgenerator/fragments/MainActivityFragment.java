@@ -200,8 +200,21 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 if (id == R.id.search_box_gps)
                     locationHelper.requestLocation();
                 else if (id == R.id.search_box_filter) {
-                    if (filterBox.getVisibility() == View.GONE)
+                    if (filterBox.getVisibility() == View.GONE) {
                         filterBox.setVisibility(View.VISIBLE);
+
+                        // Show tutorial about entering multiple filters.
+                        MaterialShowcaseSequence filterShowcase = new MaterialShowcaseSequence(getActivity(), BuildConfig.VERSION_NAME + "FILTER");
+                        ShowcaseConfig config = new ShowcaseConfig();
+                        config.setDelay(250);
+                        filterShowcase.setConfig(config);
+
+                        filterShowcase.addSequenceItem(buildShowcaseView(filterBox, new RectangleShape(0, 0),
+                                "In the mood for multiple things? List your filters separated by comma to combine the results!"
+                        ));
+
+                        filterShowcase.start();
+                    }
                     else if (filterBox.getVisibility() == View.VISIBLE)
                         filterBox.setVisibility(View.GONE);
                 }
@@ -248,9 +261,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                 filterBox.setVisibility(View.GONE);
 
-                // Clear all the markers on the map.
-                map.clear();
-
                 if (searchQuery.isEmpty() && filterQuery.isEmpty()) {
                     searchQuery = searchLocationBox.getQuery();
                     filterQuery = filterBox.getText().toString();
@@ -289,10 +299,27 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                                 "Acquiring GPS signal may take up to a minute on some devices.");
                         alert.show();
                     } else {
-                        initialYelpQuery = new RunYelpQuery(String.valueOf(searchLocationBox.getQuery()),
-                                String.valueOf(filterBox.getText()),
-                                String.valueOf(location.getLatitude()),
-                                String.valueOf(location.getLongitude())).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+                        // Split the filters by comma if the user wants multiple filters.
+                        // Run separate query for each filter.
+                        if (filterBox.getText().toString().contains(",")) {
+                            for (String filter : filterBox.getText().toString().split(",") ) {
+                                initialYelpQuery = new RunYelpQuery(
+                                        String.valueOf(searchLocationBox.getQuery()),
+                                        filter.trim(),
+                                        String.valueOf(location.getLatitude()),
+                                        String.valueOf(location.getLongitude()))
+                                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                            }
+                        }
+                        else {
+                            initialYelpQuery = new RunYelpQuery(
+                                    String.valueOf(searchLocationBox.getQuery()),
+                                    String.valueOf(filterBox.getText()),
+                                    String.valueOf(location.getLatitude()),
+                                    String.valueOf(location.getLongitude()))
+                                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        }
                     }
                 } else {
 
@@ -312,8 +339,23 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         alert.setMessage("Please enter a valid address, city, zip code, or use GPS by clicking the icon.");
                         alert.show();
                     } else {
-                        initialYelpQuery = new RunYelpQuery(String.valueOf(searchLocationBox.getQuery()),
-                                String.valueOf(filterBox.getText())).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+                        // Split the filters by comma if the user wants multiple filters.
+                        // Run separate query for each filter.
+                        if (filterBox.getText().toString().contains(",")) {
+                            for (String filter : filterBox.getText().toString().split(",") ) {
+                                initialYelpQuery = new RunYelpQuery(
+                                        String.valueOf(searchLocationBox.getQuery()),
+                                        filter.trim())
+                                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                            }
+                        }
+                        else {
+                            initialYelpQuery = new RunYelpQuery(
+                                    String.valueOf(searchLocationBox.getQuery()),
+                                    String.valueOf(filterBox.getText()))
+                                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        }
                     }
                 }
             }
@@ -323,7 +365,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         //MaterialShowcaseView.resetAll(getContext());
 
         // A tutorial that displays only once explaining the input to the app.
-        MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), BuildConfig.VERSION_NAME);
+        MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), BuildConfig.VERSION_NAME + "MAIN");
         ShowcaseConfig config = new ShowcaseConfig();
         config.setDelay(250);
         sequence.setConfig(config);
@@ -637,6 +679,9 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
      * @param restaurant the restaurant that will be on the map.
      */
     private void updateMapWithRestaurant(Restaurant restaurant) {
+        // Clear all the markers on the map.
+        map.clear();
+
         LatLng latLng = new LatLng(restaurant.getLat(), restaurant.getLon());
 
         map.addMarker(new MarkerOptions().position(latLng).title(String.format("%s: %s",
@@ -781,7 +826,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             }
 
             // A tutorial that displays only once explaining the action that can be done on the restaurant card.
-            MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), "2");
+            MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), BuildConfig.VERSION_NAME + "CARD");
             ShowcaseConfig config = new ShowcaseConfig();
             config.setDelay(100);
             sequence.setConfig(config);
