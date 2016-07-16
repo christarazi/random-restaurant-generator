@@ -6,5 +6,8 @@
     <string name="string_button_text_generate">GENERATE</string>
     <string name="string_button_text_loading">LOADING…</string>
     <string name="string_empty_saved_list">You don\'t have restaurants added to your Saved List.</string>
+    <string name="string_location_is_off">Location is off. Please enable Location in your settings.</string>
+    <string name="string_getting_location">Getting location…</string>
+    <string name="string_current_location">Current Location</string>
 
 </resources>

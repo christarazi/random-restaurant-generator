@@ -18,6 +18,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
+import com.chris.randomrestaurantgenerator.R;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
@@ -32,7 +33,7 @@ public class LocationProviderHelper {
     public static final int MY_LOCATION_REQUEST_CODE = 1;
     public static boolean useGPS = false;
 
-    private final String INFO_TEXT = "Current Location";
+    private final String CURRENT_LOCATION;
 
     private Activity activity;
     private View view;
@@ -40,7 +41,8 @@ public class LocationProviderHelper {
     private LocationListener locationListener;
     private Location location;
     private FloatingSearchView searchLocationBox;
-    private ProgressDialog dialog;
+    private ProgressDialog progressDialog;
+    private AlertDialog.Builder noLocationDialog;
     private String PROVIDER;
 
     private SharedPrefsHelper sharedPrefsHelper;
@@ -49,9 +51,12 @@ public class LocationProviderHelper {
 
         this.activity = act;
         this.view = view;
-        this.dialog = new ProgressDialog(this.activity);
         this.searchLocationBox = infoBox;
 
+        CURRENT_LOCATION = this.activity.getString(R.string.string_current_location);
+
+        this.progressDialog = new ProgressDialog(this.activity);
+        this.noLocationDialog = new AlertDialog.Builder(this.activity);
         this.sharedPrefsHelper = new SharedPrefsHelper(this.activity);
 
         // Acquire a reference to the system Location Manager
@@ -62,13 +67,17 @@ public class LocationProviderHelper {
             public void onLocationChanged(Location loc) {
                 location = loc;
                 Toast.makeText(activity, "Location acquired: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
+                progressDialog.dismiss();
                 dismissLocationUpdater();
 
-                if (PROVIDER.equals(LocationManager.GPS_PROVIDER))
-                    searchLocationBox.setSearchText(String.format("%s (GPS)", INFO_TEXT));
-                else if (PROVIDER.equals(LocationManager.NETWORK_PROVIDER))
-                    searchLocationBox.setSearchText(String.format("%s (NETWORK)", INFO_TEXT));
+                if (PROVIDER.equals(LocationManager.GPS_PROVIDER)) {
+                    searchLocationBox.clearQuery();
+                    searchLocationBox.setSearchText(String.format("%s (GPS)", CURRENT_LOCATION));
+                }
+                else if (PROVIDER.equals(LocationManager.NETWORK_PROVIDER)) {
+                    searchLocationBox.clearQuery();
+                    searchLocationBox.setSearchText(String.format("%s (NETWORK)", CURRENT_LOCATION));
+                }
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -80,6 +89,29 @@ public class LocationProviderHelper {
             public void onProviderDisabled(String provider) {
             }
         };
+
+        progressDialog.setMessage(this.activity.getString(R.string.string_getting_location));
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progressDialog.setCanceledOnTouchOutside(false);
+        progressDialog.setCancelable(false);
+        progressDialog.setButton(ProgressDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                dismissLocationUpdater();
+                useGPS = false;
+                searchLocationBox.clearQuery();
+            }
+        });
+
+        this.noLocationDialog.setMessage(R.string.string_location_is_off);
+        this.noLocationDialog.setTitle("Error");
+        this.noLocationDialog.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
     }
 
     public LocationManager getLocationManager() {
@@ -95,9 +127,10 @@ public class LocationProviderHelper {
     }
 
     public void requestLocation() {
+
         boolean permissionsDenied =
                 checkSelfPermission(activity, ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED &&
-                checkSelfPermission(activity, ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED;
+                        checkSelfPermission(activity, ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED;
 
         if (permissionsDenied) {
             Log.d("CHRIS", "permissions denied");
@@ -105,7 +138,7 @@ public class LocationProviderHelper {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 boolean shouldShowRationale =
                         ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_FINE_LOCATION) ||
-                        ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_COARSE_LOCATION);
+                                ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_COARSE_LOCATION);
 
                 // Alert the user that permission is required if this is the first time.
                 if (sharedPrefsHelper.checkFirstTimeRequestingLocation()) {
@@ -117,6 +150,7 @@ public class LocationProviderHelper {
                         @Override
                         public void onClick(View v) {
                             snackbar.dismiss();
+                            activity.requestPermissions(new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, MY_LOCATION_REQUEST_CODE);
                         }
                     }).show();
                 } else {
@@ -129,6 +163,7 @@ public class LocationProviderHelper {
                             @Override
                             public void onClick(View v) {
                                 snackbar.dismiss();
+                                activity.requestPermissions(new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, MY_LOCATION_REQUEST_CODE);
                             }
                         }).show();
                     } else {
@@ -145,13 +180,6 @@ public class LocationProviderHelper {
                         }).show();
                     }
                 }
-
-                /**
-                 * Request permission regardless of the outcome above.
-                 * Because if the permissions are denied, the method below will just do nothing
-                 * and will have no side effects.
-                 */
-                activity.requestPermissions(new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, MY_LOCATION_REQUEST_CODE);
             }
         } else {
             // Check which Location provider is available to us.
@@ -162,42 +190,22 @@ public class LocationProviderHelper {
                         .show();
                 this.PROVIDER = LocationManager.NETWORK_PROVIDER;
             } else {
-                AlertDialog.Builder dialog = new AlertDialog.Builder(this.activity);
-                dialog.setMessage("Location is off. Please enable Location in your settings.");
-                dialog.setTitle("Error");
-                dialog.setNeutralButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-                dialog.show();
-
+                this.noLocationDialog.show();
                 return;
             }
-
-            this.locationManager.requestLocationUpdates(this.PROVIDER, 1000, 1, this.getLocationListener());
-
-            // For some reason, requesting Location updates gets stuck randomly, so this kicks it in the butt and hurries it along.
-            // See: http://stackoverflow.com/q/14700755/2193236
-            this.locationManager.getLastKnownLocation(this.PROVIDER);
-
-            useGPS = true;
-            dialog.setMessage("Getting location...");
-            dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            dialog.setCanceledOnTouchOutside(false);
-            dialog.setCancelable(false);
-            dialog.setButton(ProgressDialog.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                    dismissLocationUpdater();
-                    useGPS = false;
-                    searchLocationBox.setSearchText("");
-                }
-            });
-            dialog.show();
         }
+
+        if (PROVIDER == null) return;
+
+        this.locationManager.requestLocationUpdates(this.PROVIDER, 1000, 1, this.getLocationListener());
+
+        // For some reason, requesting Location updates gets stuck randomly, so this kicks it in the butt and hurries it along.
+        // See: http://stackoverflow.com/q/14700755/2193236
+        this.locationManager.getLastKnownLocation(this.PROVIDER);
+
+        useGPS = true;
+
+        progressDialog.show();
     }
 
     public void dismissLocationUpdater() {

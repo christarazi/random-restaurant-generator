@@ -17,7 +17,7 @@
         android:layout_marginTop="@dimen/_4sdp">
 
         <EditText
-            android:id="@+id/filter"
+            android:id="@+id/filterBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
@@ -32,6 +32,24 @@
             android:visibility="gone"/>
 
     </android.support.design.widget.TextInputLayout>
+
+    <fr.castorflex.android.circularprogressbar.CircularProgressBar
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="@dimen/_44sdp"
+        android:layout_height="@dimen/_44sdp"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:indeterminate="true"
+        app:cpb_colors="@array/gplus_colors"
+        app:cpb_rotation_speed="1.0"
+        app:cpb_sweep_speed="1.0"
+        app:cpb_stroke_width="4dp"
+        app:cpb_min_sweep_angle="10"
+        app:cpb_max_sweep_angle="300"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/tilUserFilter"
+        android:id="@+id/circularProgressBarMainFragment"
+        android:visibility="gone"/>
 
     <android.support.v7.widget.AppCompatButton
         android:id="@+id/generate"
@@ -51,7 +69,7 @@
         android:textSize="@dimen/_16sdp" />
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/recyclerView"
+        android:id="@+id/restaurantView"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_130sdp"
         android:layout_below="@+id/tilUserFilter">
@@ -63,7 +81,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/generate"
-        android:layout_below="@id/recyclerView"
+        android:layout_below="@id/restaurantView"
         android:animateLayoutChanges="true"
         android:visibility="invisible">
 

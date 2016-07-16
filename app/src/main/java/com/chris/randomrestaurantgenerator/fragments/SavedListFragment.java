@@ -69,7 +69,7 @@ public class SavedListFragment extends Fragment {
         listRecyclerView = (RecyclerView) rootLayout.findViewById(R.id.listRecyclerView);
         listRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         emptyListView = (TextView) rootLayout.findViewById(R.id.emptyText);
-        progressBar = (CircularProgressBar) rootLayout.findViewById(R.id.circularProgressBar);
+        progressBar = (CircularProgressBar) rootLayout.findViewById(R.id.circularProgressBarSavedList);
 
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override

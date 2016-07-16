@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
@@ -11,11 +12,10 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -40,6 +40,7 @@ import com.chris.randomrestaurantgenerator.managers.UnscrollableLinearLayoutMana
 import com.chris.randomrestaurantgenerator.models.Restaurant;
 import com.chris.randomrestaurantgenerator.utils.LocationProviderHelper;
 import com.chris.randomrestaurantgenerator.utils.TwoStepOAuth;
+import com.chris.randomrestaurantgenerator.utils.TypeOfError;
 import com.chris.randomrestaurantgenerator.views.MainRestaurantCardAdapter;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -49,7 +50,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.scribe.builder.ServiceBuilder;
 import org.scribe.model.OAuthRequest;
@@ -63,6 +63,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import fr.castorflex.android.circularprogressbar.CircularProgressBar;
+import fr.castorflex.android.circularprogressbar.CircularProgressDrawable;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
@@ -78,28 +80,30 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     FloatingSearchView searchLocationBox;
     EditText filterBox;
     Button generate;
+    int generateBtnColor;
 
     RelativeLayout rootLayout;
-    RecyclerView recyclerView;
-
-    MainRestaurantCardAdapter mainRestaurantCardAdapter;
-
-    Restaurant currentRestaurant;
-    LocationProviderHelper locationHelper;
-
+    RecyclerView restaurantView;
     LinearLayout mapCardContainer;
     MapView mapView;
     GoogleMap map;
 
+    MainRestaurantCardAdapter mainRestaurantCardAdapter;
+    LocationProviderHelper locationHelper;
+    Restaurant currentRestaurant;
+    ArrayList<Restaurant> restaurants = new ArrayList<>();
+
     OAuthService service;
     Token accessToken;
 
-    int generateBtnColor;
+    int errorInQuery;
     boolean taskRunning = false;
-    boolean runSecondQuery = true;
-    boolean restartQuery = false;
-    ArrayList<Restaurant> restaurants = new ArrayList<>();
+    boolean runSecondQuery = false;
+    boolean restartQuery = true;
+    String searchQuery = "";
+    String filterQuery = "";
 
+    CircularProgressBar progressBar;
     AsyncTask initialYelpQuery;
     AsyncTask backgroundYelpQuery;
 
@@ -115,8 +119,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         super.onCreateView(inflater, container, savedInstanceState);
 
         rootLayout = (RelativeLayout) inflater.inflate(R.layout.fragment_main, container, false);
-        recyclerView = (RecyclerView) rootLayout.findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new UnscrollableLinearLayoutManager(getContext()));
+        restaurantView = (RecyclerView) rootLayout.findViewById(R.id.restaurantView);
+        restaurantView.setLayoutManager(new UnscrollableLinearLayoutManager(getContext()));
 
         mapCardContainer = (LinearLayout) rootLayout.findViewById(R.id.cardMapLayout);
         mapView = (MapView) rootLayout.findViewById(R.id.mapView);
@@ -125,14 +129,16 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         final Bundle mapViewSavedInstanceState = savedInstanceState != null ? savedInstanceState.getBundle("mapViewSaveState") : null;
         mapView.onCreate(mapViewSavedInstanceState);
 
-        filterBox = (EditText) rootLayout.findViewById(R.id.filter);
+        filterBox = (EditText) rootLayout.findViewById(R.id.filterBox);
         generate = (Button) rootLayout.findViewById(R.id.generate);
         generateBtnColor = Color.parseColor("#F6511D");
 
-        // Build OAuth request
+        // Build OAuth service.
         service = new ServiceBuilder().provider(TwoStepOAuth.class).apiKey(TwoStepOAuth.getConsumerKey())
                 .apiSecret(TwoStepOAuth.getConsumerSecret()).build();
         accessToken = new Token(TwoStepOAuth.getToken(), TwoStepOAuth.getTokenSecret());
+
+        progressBar = (CircularProgressBar) rootLayout.findViewById(R.id.circularProgressBarMainFragment);
 
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -151,7 +157,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 if (direction == 8) {
                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(currentRestaurant.getUrl())));
 
-                    // We don't want to remove the restaurant here, so we add it back to the recyclerView.
+                    // We don't want to remove the restaurant here, so we add it back to the restaurantView.
                     mainRestaurantCardAdapter.remove();
                     mainRestaurantCardAdapter.add(currentRestaurant);
                 }
@@ -159,7 +165,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         };
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
-        itemTouchHelper.attachToRecyclerView(recyclerView);
+        itemTouchHelper.attachToRecyclerView(restaurantView);
 
         return rootLayout;
     }
@@ -205,20 +211,12 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         searchLocationBox.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
             public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
-
             }
 
             @Override
             public void onSearchAction(String currentQuery) {
+                searchLocationBox.setSearchText(currentQuery);
                 searchLocationBox.setSearchBarTitle(currentQuery);
-            }
-        });
-
-        searchLocationBox.setOnQueryChangeListener(new FloatingSearchView.OnQueryChangeListener() {
-            @Override
-            public void onSearchTextChanged(String oldQuery, String newQuery) {
-                if (oldQuery.compareTo(newQuery) != 0)
-                    restartQuery = true;
             }
         });
 
@@ -232,25 +230,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     return true;
                 }
                 return false;
-            }
-        });
-
-        filterBox.addTextChangedListener(new TextWatcher() {
-
-            String oldQuery;
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                oldQuery = s.toString();
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (s.toString().compareTo(oldQuery) != 0)
-                    restartQuery = true;
             }
         });
 
@@ -271,6 +250,26 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                 // Clear all the markers on the map.
                 map.clear();
+
+                if (searchQuery.isEmpty() && filterQuery.isEmpty()) {
+                    searchQuery = searchLocationBox.getQuery();
+                    filterQuery = filterBox.getText().toString();
+                }
+                else {
+                    if (searchQuery.compareTo(searchLocationBox.getQuery()) != 0 ||
+                            filterQuery.compareTo(filterBox.getText().toString()) != 0) {
+
+                        Log.d("CHRIS", "restarting query");
+                        restartQuery = true;
+                        restaurants.clear();
+
+                        searchQuery = searchLocationBox.getQuery();
+                        filterQuery = filterBox.getText().toString();
+
+                        //We want to use GPS if searchQuery contains the string "Current Location".
+                        LocationProviderHelper.useGPS = searchQuery.contains(getActivity().getString(R.string.string_current_location));
+                    }
+                }
 
                 if (LocationProviderHelper.useGPS) {
 
@@ -299,6 +298,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
                     // If the user is entering their location, check to make sure they have entered one.
                     // Else, begin the AsyncTask.
+                    Log.d("CHRIS", "Query: " + searchLocationBox.getQuery());
+                    Log.d("CHRIS", "Query length: " + searchLocationBox.getQuery().length());
                     if (searchLocationBox.getQuery().length() == 0 && restaurants.size() == 0) {
                         AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
                         alert.setNeutralButton("OK", new DialogInterface.OnClickListener() {
@@ -329,8 +330,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
         sequence.addSequenceItem(buildShowcaseView(searchLocationBox, new RectangleShape(0, 0),
                 "Enter any zip code, city, or address here.\n\n" +
-                "Click the GPS icon to use your current location.\n\n" +
-                "Filter your results if you're in the mood for something specific."
+                        "Click the GPS icon to use your current location.\n\n" +
+                        "Filter your results by clicking the magnifying glass if you're in the mood for something specific."
         ));
 
         sequence.start();
@@ -401,11 +402,12 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             }
         }
 
-        if (backgroundYelpQuery != null)
+        if (backgroundYelpQuery != null) {
             if (backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING) {
                 backgroundYelpQuery.cancel(true);
                 enableGenerateButton();
             }
+        }
     }
 
     @Override
@@ -417,6 +419,18 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
+    }
+
+    // Callback for requesting permissions.
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        // Don't do anything if grantResults does not have 2 elements.
+        if (grantResults.length != 2) return;
+
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED)
+            locationHelper.requestLocation();
     }
 
     /**
@@ -462,19 +476,23 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         generate.setText(R.string.string_button_text_generate);
         generate.setBackgroundColor(generateBtnColor);
         generate.setEnabled(true);
+
+        progressBar.setVisibility(View.GONE);
+        progressBar.progressiveStop();
     }
 
     /**
      * Function to query Yelp for restaurants. Returns an ArrayList of Restaurants.
-     * @param lat:      the user's latitude, null if @param input is not empty.
-     * @param lon:      the user's longitude, null if @param input is not empty..
-     * @param input     the user's location string, e.g. zip, city, etc.
-     * @param filter    the user's filter string, e.g. sushi, bbq, etc.
-     * @param offset    the offset for the Yelp query.
-     * @return          true if successful querying Yelp; false otherwise.
+     *
+     * @param lat:   the user's latitude, null if @param input is not empty.
+     * @param lon:   the user's longitude, null if @param input is not empty..
+     * @param input  the user's location string, e.g. zip, city, etc.
+     * @param filter the user's filterBox string, e.g. sushi, bbq, etc.
+     * @param offset the offset for the Yelp query.
+     * @return true if successful querying Yelp; false otherwise.
      */
     private boolean queryYelp(String lat, String lon, String input,
-                           String filter, int offset) {
+                              String filter, int offset) {
 
         OAuthRequest request;
 
@@ -511,17 +529,33 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             int length = jsonBusinessesArray.length();
 
             // This occurs if a network communication error occurs or if no restaurants were found.
-            if (length <= 0)
+            if (length <= 0) {
+                errorInQuery = TypeOfError.NO_RESTAURANTS;
                 return false;
+            }
 
-            for (int i = 0; i < length; i++)
-                restaurants.add(convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(i)));
+            for (int i = 0; i < length; i++) {
+                Restaurant res = convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(i));
+                if (res != null)
+                    restaurants.add(res);
+            }
 
-        } catch (JSONException e) {
+            if (restaurants.isEmpty()) {
+                errorInQuery = TypeOfError.NO_RESTAURANTS;
+                return false;
+            }
+
+        } catch (Exception e) {
+            if (e.getMessage().contains("No value for businesses"))
+                errorInQuery = TypeOfError.NO_RESTAURANTS;
+            else if (e.getMessage().contains("No value for"))
+                errorInQuery = TypeOfError.MISSING_INFO;
+
             e.printStackTrace();
             return false;
         }
 
+        errorInQuery = TypeOfError.NO_ERROR;
         return true;
     }
 
@@ -597,6 +631,22 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         }
     }
 
+    /**
+     * Update the map with a new marker based on restaurant's coordinates.
+     *
+     * @param restaurant the restaurant that will be on the map.
+     */
+    private void updateMapWithRestaurant(Restaurant restaurant) {
+        LatLng latLng = new LatLng(restaurant.getLat(), restaurant.getLon());
+
+        map.addMarker(new MarkerOptions().position(latLng).title(String.format("%s: %s",
+                restaurant.getName(), restaurant.getAddress())
+                .replace("[", "").replace("]", "").trim()));
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14));
+
+        mapCardContainer.setVisibility(View.VISIBLE);
+    }
+
     // Async task that connects to Yelp's API and queries for restaurants based on location / zip code.
     public class RunYelpQuery extends AsyncTask<Void, Void, Restaurant> {
 
@@ -605,7 +655,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         String userFilterStr;
         boolean successfulQuery;
 
-        public RunYelpQuery(String...params) {
+        public RunYelpQuery(String... params) {
             this.params = params;
             userInputStr = params[0];
             userFilterStr = params[1];
@@ -615,6 +665,11 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         protected void onPreExecute() {
             super.onPreExecute();
             disableGenerateButton();
+
+            if (restartQuery) {
+                ((CircularProgressDrawable) progressBar.getIndeterminateDrawable()).start();
+                progressBar.setVisibility(View.VISIBLE);
+            }
         }
 
         @Override
@@ -630,7 +685,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     userInputStr = userInputStr.replaceAll(" ", "+");
                 }
 
-                // If the user entered a filter, make sure to encode all spaces and "+" for URL query.
+                // If the user entered a filterBox, make sure to encode all spaces and "+" for URL query.
                 if (userFilterStr.length() != 0) {
                     userFilterStr = userFilterStr.replaceAll(" ", "+");
 
@@ -646,8 +701,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     lat = params[2];
                     lon = params[3];
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -656,19 +710,23 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 restartQuery = false;
             }
 
-            // Get restaurants only when the current list is empty.
+            // Get restaurants only when the restaurants list is empty.
             Restaurant chosenRestaurant = null;
-            if (restaurants == null || restaurants.size() == 0) {
+            if (restaurants == null || restaurants.isEmpty()) {
                 successfulQuery = queryYelp(lat, lon, userInputStr, userFilterStr, 0);
 
                 if (successfulQuery) {
-                    chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
-                    restaurants.remove(chosenRestaurant);
-                }
 
-                runSecondQuery = true;
-            }
-            else if (restaurants.size() != 0) {
+                    // Make sure the restaurants list is not empty before accessing it.
+                    if (!restaurants.isEmpty()) {
+                        chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
+                        restaurants.remove(chosenRestaurant);
+
+                        // Run second query in background only if initial query was successful.
+                        runSecondQuery = true;
+                    }
+                }
+            } else if (!restaurants.isEmpty()) {
                 chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
                 restaurants.remove(chosenRestaurant);
             }
@@ -685,7 +743,19 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
             if (restaurant == null) {
                 Log.d("CHRIS", "Error during transmission");
-                restaurants.clear();
+                Log.d("CHRIS", "errorInQuery: " + errorInQuery);
+
+                if (errorInQuery == TypeOfError.NO_RESTAURANTS) {
+                    Toast.makeText(getContext(),
+                            "No restaurants found at this location, please enter a different location.",
+                            Toast.LENGTH_LONG).show();
+                    restaurants.clear();
+                } else if (errorInQuery == TypeOfError.MISSING_INFO) {
+                    // Try again if the current has missing info.
+                    generate.performClick();
+                    return;
+                }
+
                 enableGenerateButton();
                 return;
             }
@@ -695,22 +765,14 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             // If the RecyclerView has not been set yet, set it with the currentRestaurant.
             if (mainRestaurantCardAdapter == null) {
                 mainRestaurantCardAdapter = new MainRestaurantCardAdapter(getContext(), currentRestaurant);
-                recyclerView.setAdapter(mainRestaurantCardAdapter);
+                restaurantView.setAdapter(mainRestaurantCardAdapter);
             }
 
             // These calls notify the RecyclerView that the data set has changed and we need to refresh.
             mainRestaurantCardAdapter.remove();
             mainRestaurantCardAdapter.add(currentRestaurant);
 
-            // Update the map with a new marker based on restaurant's coordinates.
-            LatLng latLng = new LatLng(restaurant.getLat(), restaurant.getLon());
-            map.addMarker(new MarkerOptions().position(latLng).title(String.format("%s: %s",
-                    restaurant.getName(), restaurant.getAddress())
-                    .replace("[", "").replace("]", "").trim()));
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14));
-
-            mapCardContainer.setVisibility(View.VISIBLE);
-
+            updateMapWithRestaurant(currentRestaurant);
             enableGenerateButton();
 
             if (runSecondQuery) {
@@ -724,7 +786,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             config.setDelay(100);
             sequence.setConfig(config);
 
-            sequence.addSequenceItem(buildShowcaseView(recyclerView, new RectangleShape(0, 0),
+            sequence.addSequenceItem(buildShowcaseView(restaurantView, new RectangleShape(0, 0),
                     "Swipe left to dismiss. Swipe right to open in Yelp. Tap bookmark button to save it for later."));
 
             sequence.addSequenceItem(buildShowcaseView(((MainActivity) getActivity()).getMenuItemView(R.id.action_saved_list),
@@ -753,7 +815,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     userInputStr = userInputStr.replaceAll(" ", "+");
                 }
 
-                // If the user entered a filter, make sure to encode all spaces and "+" for URL query.
+                // If the user entered a filterBox, make sure to encode all spaces and "+" for URL query.
                 if (userFilterStr.length() != 0) {
                     userFilterStr = userFilterStr.replaceAll(" ", "+");
 
@@ -769,8 +831,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     lat = params[2];
                     lon = params[3];
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
