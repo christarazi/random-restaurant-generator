@@ -304,7 +304,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         if (multiFilters.containsAll(filterList) && restaurants.isEmpty())
                             multiFilters.clear();
 
-                        Log.d("RRG", "contains all: " + multiFilters.containsAll(filterList));
                         if (filterBoxText.contains(",") && !multiFilters.containsAll(filterList)) {
                             multiFilters.clear();
                             multiFilters.addAll(filterList);
@@ -355,14 +354,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     if (searchLocationBox.getQuery().length() == 0 && restaurants.size() == 0) {
                         displayAlertDialog(R.string.string_enter_valid_location, "Error");
                     } else {
-
-                        Log.d("RRG", "contains all: " + multiFilters.containsAll(filterList));
-                        for (String a : multiFilters) {
-                            Log.d("RRG", "MultiFilters: " + a);
-                        }
-                        for (String a : filterList) {
-                            Log.d("RRG", "filterList: " + a);
-                        }
 
                         /**
                          * Split the filters by comma if the user wants multiple filters.
@@ -851,10 +842,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
 
             // Get restaurants only when the restaurants list is empty.
             Restaurant chosenRestaurant = null;
-            Log.d("RRG", "SIZE: " + restaurants.size());
             if (restaurants == null || restaurants.isEmpty()) {
                 successfulQuery = queryYelp(lat, lon, userInputStr, userFilterStr, 0);
-                Log.d("RRG", "Queried yelp: " + successfulQuery);
 
                 if (successfulQuery) {
 
@@ -877,8 +866,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 restaurants.remove(chosenRestaurant);
             }
 
-            Log.d("RRG", "run background " + runBackgroundQueryAfter);
-
             // Return randomly chosen restaurant.
             return chosenRestaurant;
         }
@@ -886,8 +873,6 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         // Set UI appropriate UI elements to display mRestaurant info.
         @Override
         protected void onPostExecute(Restaurant restaurant) {
-
-            Log.d("RRG", "ERROR: " + errorInQuery);
 
             if (restaurant == null) {
                 if (errorInQuery == TypeOfError.NO_RESTAURANTS) {
