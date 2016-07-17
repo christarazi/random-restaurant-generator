@@ -14,5 +14,6 @@
     <string name="string_no_restaurants_found">No restaurants found at this location, please enter a different location.</string>
     <string name="string_timed_out_msg">Connection timed out, check your internet connection and try again.</string>
     <string name="string_task_running_msg">Task still running, please wait.</string>
+    <string name="string_no_network">No network connection, please turn on your network.</string>
 
 </resources>

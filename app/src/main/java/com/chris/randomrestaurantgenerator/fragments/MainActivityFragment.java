@@ -50,8 +50,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.scribe.builder.ServiceBuilder;
+import org.scribe.exceptions.OAuthConnectionException;
 import org.scribe.model.OAuthRequest;
 import org.scribe.model.Response;
 import org.scribe.model.Token;
@@ -294,7 +296,14 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         /**
                          * Split the filters by comma if the user wants multiple filters.
                          * Run separate query for each filter.
+                         *
+                         * If multiFilter contains all of filterList and restaurants is empty,
+                         * that the user has exhausted through all the restaurants, and we
+                         * must restart the query, so clear the multiFilters to start over.
                          */
+                        if (multiFilters.containsAll(filterList) && restaurants.isEmpty())
+                            multiFilters.clear();
+
                         Log.d("RRG", "contains all: " + multiFilters.containsAll(filterList));
                         if (filterBoxText.contains(",") && !multiFilters.containsAll(filterList)) {
                             multiFilters.clear();
@@ -358,7 +367,14 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                         /**
                          * Split the filters by comma if the user wants multiple filters.
                          * Run separate query for each filter.
+                         *
+                         * If multiFilter contains all of filterList and restaurants is empty,
+                         * that the user has exhausted through all the restaurants, and we
+                         * must restart the query, so clear the multiFilters to start over.
                          */
+                        if (multiFilters.containsAll(filterList) && restaurants.isEmpty())
+                            multiFilters.clear();
+
                         if (filterBoxText.contains(",") && !multiFilters.containsAll(filterList)) {
                             multiFilters.clear();
                             multiFilters.addAll(filterList);
@@ -571,7 +587,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         filterShowcase.setConfig(config);
 
         filterShowcase.addSequenceItem(buildShowcaseView(filterBox, new RectangleShape(0, 0),
-                "In the mood for multiple things? List your filters separated by comma to combine the results!"
+                "In the mood for multiple things? List your filters separated by a comma to combine the results!"
         ));
 
         filterShowcase.start();
@@ -607,37 +623,34 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
      */
     private boolean queryYelp(String lat, String lon, String input,
                               String filter, int offset) {
-
-        OAuthRequest request;
-
-        if (LocationProviderHelper.useGPS) {
-            request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + filter +
-                    "&ll=" + lat + "," + lon + "&offset=" + offset);
-
-            request.setConnectTimeout(10, TimeUnit.SECONDS);
-            request.setReadTimeout(10, TimeUnit.SECONDS);
-
-            Log.d("RRG", "request made: " + "https://api.yelp.com/v2/search?" + filter +
-                    "&ll=" + lat + "," + lon + "&offset=" + offset);
-        } else {
-            request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + filter +
-                    "&location=" + input + "&offset=" + offset);
-
-            request.setConnectTimeout(10, TimeUnit.SECONDS);
-            request.setReadTimeout(10, TimeUnit.SECONDS);
-
-            Log.d("RRG", "request made: " + "https://api.yelp.com/v2/search?" + filter +
-                    "&location=" + input + "&offset=" + offset);
-        }
-
-        service.signRequest(accessToken, request);
-        Response response = request.send();
-
-        JSONArray jsonBusinessesArray;
-
         try {
+            OAuthRequest request;
+
+            if (LocationProviderHelper.useGPS) {
+                request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + filter +
+                        "&ll=" + lat + "," + lon + "&offset=" + offset);
+
+                request.setConnectTimeout(10, TimeUnit.SECONDS);
+                request.setReadTimeout(10, TimeUnit.SECONDS);
+
+                Log.d("RRG", "request made: " + "https://api.yelp.com/v2/search?" + filter +
+                        "&ll=" + lat + "," + lon + "&offset=" + offset);
+            } else {
+                request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + filter +
+                        "&location=" + input + "&offset=" + offset);
+
+                request.setConnectTimeout(10, TimeUnit.SECONDS);
+                request.setReadTimeout(10, TimeUnit.SECONDS);
+
+                Log.d("RRG", "request made: " + "https://api.yelp.com/v2/search?" + filter +
+                        "&location=" + input + "&offset=" + offset);
+            }
+
+            service.signRequest(accessToken, request);
+            Response response = request.send();
+
             // Get JSON array that holds the restaurants from Yelp.
-            jsonBusinessesArray = new JSONObject(response.getBody())
+            JSONArray jsonBusinessesArray = new JSONObject(response.getBody())
                     .getJSONArray("businesses");
 
             int length = jsonBusinessesArray.length();
@@ -659,14 +672,20 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 return false;
             }
 
-        } catch (Exception e) {
+        } catch (OAuthConnectionException e) {
+            errorInQuery = TypeOfError.NETWORK_CONNECTION_ERROR;
+            e.printStackTrace();
+            return false;
+        } catch (JSONException e) {
             if (e.getMessage().contains("No value for businesses"))
                 errorInQuery = TypeOfError.NO_RESTAURANTS;
             else if (e.getMessage().contains("No value for"))
                 errorInQuery = TypeOfError.MISSING_INFO;
-            else if (e.getMessage().contains("Timed out"))
-                errorInQuery = TypeOfError.TIMED_OUT;
 
+            e.printStackTrace();
+            return false;
+        } catch (Exception e) {
+            if (e.getMessage().contains("timed out")) errorInQuery = TypeOfError.TIMED_OUT;
             e.printStackTrace();
             return false;
         }
@@ -868,6 +887,8 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         @Override
         protected void onPostExecute(Restaurant restaurant) {
 
+            Log.d("RRG", "ERROR: " + errorInQuery);
+
             if (restaurant == null) {
                 if (errorInQuery == TypeOfError.NO_RESTAURANTS) {
                     Toast.makeText(getContext(),
@@ -879,13 +900,19 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                     generate.performClick();
                     return;
                 }
+                else if (errorInQuery == TypeOfError.NETWORK_CONNECTION_ERROR) {
+                    Toast.makeText(getContext(),
+                            R.string.string_no_network,
+                            Toast.LENGTH_LONG).show();
+                }
                 else if (errorInQuery == TypeOfError.TIMED_OUT) {
                     Toast.makeText(getContext(),
                             R.string.string_timed_out_msg,
                             Toast.LENGTH_LONG).show();
-                    initialYelpQuery.cancel(true);
-                    backgroundYelpQuery.cancel(true);
                 }
+
+                if (initialYelpQuery!= null) initialYelpQuery.cancel(true);
+                if (backgroundYelpQuery!= null) backgroundYelpQuery.cancel(true);
 
                 enableGenerateButton();
                 return;
