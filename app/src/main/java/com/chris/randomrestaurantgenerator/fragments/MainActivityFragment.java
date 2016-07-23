@@ -60,6 +60,7 @@ import org.scribe.model.Token;
 import org.scribe.model.Verb;
 import org.scribe.oauth.OAuthService;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -715,13 +716,25 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 distance = locationHelper.getLocation().distanceTo(restaurantLoc);
             } else {
                 Geocoder geocoder = new Geocoder(getContext());
-                List<Address> addressList = geocoder.getFromLocationName(searchLocationBox.getQuery(), 1);
-                double estimatedLat = addressList.get(0).getLatitude();
-                double estimatedLon = addressList.get(0).getLongitude();
-                Location estimatedLocation = new Location("estimatedLocation");
-                estimatedLocation.setLatitude(estimatedLat);
-                estimatedLocation.setLongitude(estimatedLon);
-                distance = estimatedLocation.distanceTo(restaurantLoc);
+
+                List<Address> addressList;
+                try {
+                    addressList = geocoder.getFromLocationName(searchLocationBox.getQuery(), 1);
+                    double estimatedLat = addressList.get(0).getLatitude();
+                    double estimatedLon = addressList.get(0).getLongitude();
+                    Location estimatedLocation = new Location("estimatedLocation");
+                    estimatedLocation.setLatitude(estimatedLat);
+                    estimatedLocation.setLongitude(estimatedLon);
+                    distance = estimatedLocation.distanceTo(restaurantLoc);
+                } catch (IOException io) {
+                    /*
+                     * If we get an IOException, that means geocoder.getFromLocationName() timed out.
+                     * Sometimes it times out setting the distance, so set distance to 0 if it does.
+                     * See below bug report:
+                     * https://code.google.com/p/gmaps-api-issues/issues/detail?id=9153
+                     */
+                    distance = 0.0f;
+                }
             }
             distance *= 0.000621371;    // Convert to miles
 
