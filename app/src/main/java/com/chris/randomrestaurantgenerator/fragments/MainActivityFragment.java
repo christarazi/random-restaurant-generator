@@ -440,21 +440,18 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         mapView.onPause();
 
         // Try to cancel the AsyncTask.
-        if (initialYelpQuery != null) {
-            if (initialYelpQuery.getStatus() == AsyncTask.Status.RUNNING) {
-                initialYelpQuery.cancel(true);
-                enableGenerateButton();
+        if (initialYelpQuery != null && initialYelpQuery.getStatus() == AsyncTask.Status.RUNNING) {
+            initialYelpQuery.cancel(true);
+            enableGenerateButton();
 
-                if (mainRestaurantCardAdapter != null) {
-                    mainRestaurantCardAdapter.remove();
-                    mapCardContainer.setVisibility(View.GONE);
-                }
+            if (mainRestaurantCardAdapter != null) {
+                mainRestaurantCardAdapter.remove();
+                mapCardContainer.setVisibility(View.GONE);
             }
         }
 
-        if (backgroundYelpQuery != null)
-            if (backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
-                backgroundYelpQuery.cancel(true);
+        if (backgroundYelpQuery != null && backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
+            backgroundYelpQuery.cancel(true);
     }
 
     @Override
@@ -606,15 +603,16 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     /**
      * Function to query Yelp for restaurants. Returns an ArrayList of Restaurants.
      *
-     * @param lat:   the user's latitude, null if @param input is not empty.
-     * @param lon:   the user's longitude, null if @param input is not empty.
-     * @param input  the user's location string, e.g. zip, city, etc.
-     * @param filter the user's filterBox string, e.g. sushi, bbq, etc.
-     * @param offset the offset for the Yelp query.
+     * @param lat:              the user's latitude, null if @param input is not empty.
+     * @param lon:              the user's longitude, null if @param input is not empty.
+     * @param input             the user's location string, e.g. zip, city, etc.
+     * @param filter            the user's filterBox string, e.g. sushi, bbq, etc.
+     * @param offset            the offset for the Yelp query.
+     * @param whichAsyncTask    the AsyncTask to cancel if necessary.
      * @return true if successful querying Yelp; false otherwise.
      */
     private boolean queryYelp(String lat, String lon, String input,
-                              String filter, int offset) {
+                              String filter, int offset, int whichAsyncTask) {
         try {
             OAuthRequest request;
 
@@ -654,6 +652,12 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             }
 
             for (int i = 0; i < length; i++) {
+                if (whichAsyncTask == 0 && initialYelpQuery.isCancelled())
+                    break;
+                else if (whichAsyncTask == 1 && backgroundYelpQuery.isCancelled())
+                    break;
+
+
                 Restaurant res = convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(i));
                 if (res != null)
                     restaurants.add(res);
@@ -816,7 +820,17 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         }
 
         @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            Log.d("RRG", "Cancelled Yelp AsyncTask");
+            restartQuery = true;
+            enableGenerateButton();
+        }
+
+        @Override
         protected Restaurant doInBackground(Void... aVoid) {
+
+            if (isCancelled()) return null;
 
             // Check for parameters so we can send the appropriate request based on user input.
             String lat = "";
@@ -856,7 +870,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             // Get restaurants only when the restaurants list is empty.
             Restaurant chosenRestaurant = null;
             if (restaurants == null || restaurants.isEmpty()) {
-                successfulQuery = queryYelp(lat, lon, userInputStr, userFilterStr, 0);
+                successfulQuery = queryYelp(lat, lon, userInputStr, userFilterStr, 0, 0);
 
                 if (successfulQuery) {
 
@@ -963,7 +977,15 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
         }
 
         @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            Log.d("RRG", "Cancelled background Yelp AsyncTask");
+        }
+
+            @Override
         protected Void doInBackground(String... params) {
+
+            if (isCancelled()) return null;
 
             // Check for parameters so we can send the appropriate request based on user input.
             String lat = "";
@@ -997,7 +1019,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 e.printStackTrace();
             }
 
-            queryYelp(lat, lon, userInputStr, userFilterStr, offset);
+            queryYelp(lat, lon, userInputStr, userFilterStr, offset, 1);
 
             return null;
         }
