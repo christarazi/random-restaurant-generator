@@ -468,26 +468,14 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     public void onDestroy() {
         super.onDestroy();
         mapView.onDestroy();
+        Log.d("RRG", "Destroyed");
 
         // Try to cancel the AsyncTask.
-        if (initialYelpQuery != null) {
-            if (initialYelpQuery.getStatus() == AsyncTask.Status.RUNNING) {
-                initialYelpQuery.cancel(true);
-                enableGenerateButton();
+        if (initialYelpQuery != null && initialYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
+            initialYelpQuery.cancel(true);
 
-                if (mainRestaurantCardAdapter != null) {
-                    mainRestaurantCardAdapter.remove();
-                    mapCardContainer.setVisibility(View.GONE);
-                }
-            }
-        }
-
-        if (backgroundYelpQuery != null) {
-            if (backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING) {
-                backgroundYelpQuery.cancel(true);
-                enableGenerateButton();
-            }
-        }
+        if (backgroundYelpQuery != null && backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
+            backgroundYelpQuery.cancel(true);
     }
 
     @Override
@@ -733,7 +721,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
                 } catch (IOException io) {
                     /*
                      * If we get an IOException, that means geocoder.getFromLocationName() timed out.
-                     * Sometimes it times out setting the distance, so set distance to 0 if it does.
+                     * Sometimes it times out, so set distance to 0 if it does.
                      * See below bug report:
                      * https://code.google.com/p/gmaps-api-issues/issues/detail?id=9153
                      */
@@ -872,23 +860,20 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             if (restaurants == null || restaurants.isEmpty()) {
                 successfulQuery = queryYelp(lat, lon, userInputStr, userFilterStr, 0, 0);
 
-                if (successfulQuery) {
-
+                if (successfulQuery && !restaurants.isEmpty()) {
                     // Make sure the restaurants list is not empty before accessing it.
-                    if (!restaurants.isEmpty()) {
-                        chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
-                        restaurants.remove(chosenRestaurant);
+                    chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
+                    restaurants.remove(chosenRestaurant);
 
-                        /**
-                         * Run background query only if the following BOTH hold:
-                         *      1) initially set to true from constructor
-                         *      2) and successfulQuery is true
-                         */
-                        if (runBackgroundQueryAfter)
-                            runBackgroundQueryAfter = true;
-                    }
+                    /**
+                     * Run background query only if the following BOTH hold:
+                     *      1) initially set to true from constructor
+                     *      2) and successfulQuery is true
+                     */
+                    if (runBackgroundQueryAfter)
+                        runBackgroundQueryAfter = true;
                 }
-            } else if (!restaurants.isEmpty()) {
+            } else if (restaurants != null && !restaurants.isEmpty()) {
                 chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
                 restaurants.remove(chosenRestaurant);
             }
