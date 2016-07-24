@@ -967,7 +967,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
             Log.d("RRG", "Cancelled background Yelp AsyncTask");
         }
 
-            @Override
+        @Override
         protected Void doInBackground(String... params) {
 
             if (isCancelled()) return null;
