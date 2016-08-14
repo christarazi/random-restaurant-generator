@@ -1,93 +1,74 @@
 package com.chris.randomrestaurantgenerator.utils;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.pm.PackageManager;
+import android.content.IntentSender;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Build;
-import android.os.Bundle;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.view.View;
+import android.support.annotation.NonNull;
 import android.widget.Toast;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.chris.randomrestaurantgenerator.R;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+
+import java.util.Arrays;
+import java.util.List;
+
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.EasyPermissions;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
-import static android.support.v4.content.ContextCompat.checkSelfPermission;
 
 /**
  * A helper class to aid with keeping one single instance of the Location object and all the other
  * periphery classes that go along with it.
  */
-public class LocationProviderHelper {
+public class LocationProviderHelper implements LocationListener,
+        ResultCallback<LocationSettingsResult> {
 
     public static final int MY_LOCATION_REQUEST_CODE = 1;
+    public static final int MY_REQUEST_CHECK_SETTINGS = 2;
+    public static final int RC_LOCATION_PERM = 120;
+    public static final String[] PERMISSIONS = new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION};
     public static boolean useGPS = false;
 
-    private final String CURRENT_LOCATION;
-
     private Activity activity;
-    private View view;
-    private LocationManager locationManager;
-    private LocationListener locationListener;
-    private Location location;
+    private GoogleApiClient mGoogleClient;
+    private LocationRequest mLocationRequest;
+    private LocationSettingsRequest mLocationSettingsRequest;
+    private Location mCurrentLocation;
+    private Location mLastLocation;
     private FloatingSearchView searchLocationBox;
     private ProgressDialog progressDialog;
-    private AlertDialog.Builder noLocationDialog;
-    private String PROVIDER;
 
-    private SharedPrefsHelper sharedPrefsHelper;
-
-    public LocationProviderHelper(final Activity act, final View view, FloatingSearchView infoBox) {
-
+    public LocationProviderHelper(final Activity act, FloatingSearchView infoBox,
+                                  GoogleApiClient googleApiClient) {
         this.activity = act;
-        this.view = view;
         this.searchLocationBox = infoBox;
+        this.mGoogleClient = googleApiClient;
 
-        CURRENT_LOCATION = this.activity.getString(R.string.string_current_location);
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(120000);
+        mLocationRequest.setFastestInterval(60000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
-        this.progressDialog = new ProgressDialog(this.activity);
-        this.noLocationDialog = new AlertDialog.Builder(this.activity);
-        this.sharedPrefsHelper = new SharedPrefsHelper(this.activity);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+        builder.addLocationRequest(mLocationRequest);
+        builder.setAlwaysShow(true);
+        mLocationSettingsRequest = builder.build();
 
-        // Acquire a reference to the system Location Manager
-        locationManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
-
-        // Define a listener that responds to location updates
-        locationListener = new LocationListener() {
-            public void onLocationChanged(Location loc) {
-                location = loc;
-                Toast.makeText(activity, "Location acquired: " + location.getLatitude() + ", " + location.getLongitude(), Toast.LENGTH_SHORT).show();
-                progressDialog.dismiss();
-                dismissLocationUpdater();
-
-                if (PROVIDER.equals(LocationManager.GPS_PROVIDER)) {
-                    searchLocationBox.clearQuery();
-                    searchLocationBox.setSearchText(String.format("%s (GPS)", CURRENT_LOCATION));
-                }
-                else if (PROVIDER.equals(LocationManager.NETWORK_PROVIDER)) {
-                    searchLocationBox.clearQuery();
-                    searchLocationBox.setSearchText(String.format("%s (NETWORK)", CURRENT_LOCATION));
-                }
-            }
-
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-            }
-
-            public void onProviderEnabled(String provider) {
-            }
-
-            public void onProviderDisabled(String provider) {
-            }
-        };
+        progressDialog = new ProgressDialog(this.activity);
 
         progressDialog.setMessage(this.activity.getString(R.string.string_getting_location));
         progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
@@ -99,118 +80,130 @@ public class LocationProviderHelper {
                 dialog.dismiss();
                 dismissLocationUpdater();
                 useGPS = false;
-                searchLocationBox.clearQuery();
             }
         });
+    }
 
-        this.noLocationDialog.setMessage(R.string.string_location_is_off);
-        this.noLocationDialog.setTitle("Error");
-        this.noLocationDialog.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+    @Override
+    public void onLocationChanged(Location location) {
+        mCurrentLocation = location;
+        progressDialog.dismiss();
+        Toast.makeText(activity, "onLocationChanged", Toast.LENGTH_SHORT).show();
+        searchLocationBox.setSearchText(activity.getString(R.string.string_current_location));
+    }
+
+    @Override
+    public void onResult(@NonNull LocationSettingsResult result) {
+        final Status status = result.getStatus();
+        switch (status.getStatusCode()) {
+            case LocationSettingsStatusCodes.SUCCESS:
+                // All location settings are satisfied. The client can
+                // initialize location requests here.
+                startLocationUpdates();
+                break;
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                // Location settings are not satisfied, but this can be fixed
+                // by showing the user a dialog.
+                try {
+                    // Show the dialog by calling startResolutionForResult(),
+                    // and check the result in onActivityResult().
+                    status.startResolutionForResult(
+                            activity,
+                            MY_REQUEST_CHECK_SETTINGS);
+                } catch (IntentSender.SendIntentException e) {
+                    // Ignore the error.
+                }
+                break;
+            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                // Location settings are not satisfied. However, we have no way
+                // to fix the settings so we won't show the dialog.
+                break;
+        }
+    }
+
+    // Called by EasyPermissions from MainActivityFragment
+    public void onPermissionsGranted(int requestCode, List<String> perms) {
+        Toast.makeText(activity, "onPermissionsGranted:" + requestCode + ":" + perms.size(), Toast.LENGTH_SHORT).show();
+        requestLocation();
+    }
+
+    // Called by EasyPermissions from MainActivityFragment
+    public void onPermissionsDenied(int requestCode, List<String> perms) {
+        Toast.makeText(activity, "onPermissionsDenied:" + requestCode + ":" + perms.size(), Toast.LENGTH_SHORT).show();
+
+        // Handle negative button on click listener
+        DialogInterface.OnClickListener onClickListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
+                Toast.makeText(activity, R.string.string_lcoation_perm_manual, Toast.LENGTH_SHORT).show();
             }
-        });
+        };
+
+        // (Optional) Check whether the user denied permissions and checked NEVER ASK AGAIN.
+        // This will display a dialog directing them to enable the permission in app settings.
+        EasyPermissions.checkDeniedPermissionsNeverAskAgain(activity,
+                activity.getString(R.string.string_location_perm_rationale),
+                R.string.settings, R.string.cancel, onClickListener, Arrays.asList(PERMISSIONS));
     }
 
-    public LocationManager getLocationManager() {
-        return locationManager;
+    // Called by EasyPermissions when permissions are granted to automatically start acquiring location.
+    @AfterPermissionGranted(RC_LOCATION_PERM)
+    private void locationPermissionsGranted() {
+        if (EasyPermissions.hasPermissions(activity, PERMISSIONS))
+            requestLocation();
+        else
+            EasyPermissions.requestPermissions(activity, activity.getString(R.string.string_location_permission_required),
+                    RC_LOCATION_PERM, PERMISSIONS);
     }
 
-    public LocationListener getLocationListener() {
-        return locationListener;
+    public void checkLocationSettings() {
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(
+                        mGoogleClient,
+                        mLocationSettingsRequest
+                );
+        result.setResultCallback(this);
     }
 
-    public Location getLocation() {
-        return location;
+    public void startLocationUpdates() {
+        if (EasyPermissions.hasPermissions(activity, PERMISSIONS)) {
+
+            Toast.makeText(activity, "Starting location updates...", Toast.LENGTH_SHORT).show();
+            LocationServices.FusedLocationApi.requestLocationUpdates(
+                    mGoogleClient, mLocationRequest, this);
+
+            if (mLastLocation == null) {
+                mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleClient);
+                Toast.makeText(activity, "Got last location", Toast.LENGTH_SHORT).show();
+                progressDialog.dismiss();
+
+                if (mLastLocation != null) onLocationChanged(mLastLocation);
+                else Toast.makeText(activity, "Still null", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            EasyPermissions.requestPermissions(activity, activity.getString(R.string.string_location_permission_required),
+                    RC_LOCATION_PERM, PERMISSIONS);
+        }
     }
 
     public void requestLocation() {
-
-        boolean permissionsDenied =
-                checkSelfPermission(activity, ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED &&
-                        checkSelfPermission(activity, ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED;
-
-        if (permissionsDenied) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                boolean shouldShowRationale =
-                        ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_FINE_LOCATION) ||
-                                ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_COARSE_LOCATION);
-
-                // Alert the user that permission is required if this is the first time.
-                if (sharedPrefsHelper.checkFirstTimeRequestingLocation()) {
-                    sharedPrefsHelper.modifyFirstTimeRequestingLocation(false);
-
-                    final Snackbar snackbar = Snackbar.make(view, "Location permissions are needed to use GPS. Please allow them.", Snackbar.LENGTH_INDEFINITE);
-                    snackbar.setAction("OK", new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            snackbar.dismiss();
-                            activity.requestPermissions(new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, MY_LOCATION_REQUEST_CODE);
-                        }
-                    }).show();
-                } else {
-                    // If it is not the first time, then the user has already pressed "Deny" at least once.
-                    if (shouldShowRationale) {
-
-                        final Snackbar snackbar = Snackbar.make(view, "Location permissions are needed to use GPS. Please allow them.", Snackbar.LENGTH_INDEFINITE);
-                        snackbar.setAction("OK", new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                snackbar.dismiss();
-                                activity.requestPermissions(new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, MY_LOCATION_REQUEST_CODE);
-                            }
-                        }).show();
-                    } else {
-                        // User has elected to deny all permissions; must enter location manually.
-                        // Most likely "Do not ask again" has been checked.
-
-                        final Snackbar snackbar = Snackbar.make(view, "Location permissions denied. Please enter location manually.", Snackbar.LENGTH_INDEFINITE);
-                        snackbar.setAction("OK", new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                snackbar.dismiss();
-                            }
-                        }).show();
-                    }
-                }
-            }
+        if (EasyPermissions.hasPermissions(activity, PERMISSIONS)) {
+            progressDialog.show();
+            checkLocationSettings();
+            useGPS = true;
         } else {
-            // Check which Location provider is available to us.
-            if (this.locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                this.PROVIDER = LocationManager.GPS_PROVIDER;
-            } else if (this.locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                Toast.makeText(this.activity, "GPS is not turned on. Please enable high accuracy mode for better accuracy. Using network for location...", Toast.LENGTH_LONG)
-                        .show();
-                this.PROVIDER = LocationManager.NETWORK_PROVIDER;
-            } else {
-                this.noLocationDialog.show();
-                return;
-            }
+            EasyPermissions.requestPermissions(activity, activity.getString(R.string.string_location_permission_required),
+                    RC_LOCATION_PERM, PERMISSIONS);
         }
-
-        if (PROVIDER == null) return;
-
-        this.locationManager.requestLocationUpdates(this.PROVIDER, 1000, 1, this.getLocationListener());
-
-        // For some reason, requesting Location updates gets stuck randomly, so this kicks it in the butt and hurries it along.
-        // See: http://stackoverflow.com/q/14700755/2193236
-        this.locationManager.getLastKnownLocation(this.PROVIDER);
-
-        useGPS = true;
-
-        progressDialog.show();
     }
 
     public void dismissLocationUpdater() {
-        boolean permissionsDenied =
-                checkSelfPermission(activity, ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED &&
-                checkSelfPermission(activity, ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED;
+        progressDialog.dismiss();
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleClient, this);
+        searchLocationBox.clearQuery();
+    }
 
-        if (permissionsDenied) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                activity.requestPermissions(new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, MY_LOCATION_REQUEST_CODE);
-        } else
-            this.locationManager.removeUpdates(locationListener);
+    public Location getLocation() {
+        return mCurrentLocation;
     }
 }

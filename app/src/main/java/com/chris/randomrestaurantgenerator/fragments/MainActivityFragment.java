@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
@@ -13,6 +12,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -42,6 +42,9 @@ import com.chris.randomrestaurantgenerator.utils.LocationProviderHelper;
 import com.chris.randomrestaurantgenerator.utils.TwoStepOAuth;
 import com.chris.randomrestaurantgenerator.utils.TypeOfError;
 import com.chris.randomrestaurantgenerator.views.MainRestaurantCardAdapter;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -69,6 +72,7 @@ import java.util.concurrent.TimeUnit;
 
 import fr.castorflex.android.circularprogressbar.CircularProgressBar;
 import fr.castorflex.android.circularprogressbar.CircularProgressDrawable;
+import pub.devrel.easypermissions.EasyPermissions;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
@@ -79,7 +83,9 @@ import uk.co.deanwild.materialshowcaseview.shape.RectangleShape;
  * A fragment containing the main activity.
  * Responsible for displaying to the user a random restaurant based off their location  / zip code.
  */
-public class MainActivityFragment extends Fragment implements OnMapReadyCallback {
+public class MainActivityFragment extends Fragment implements
+        OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, EasyPermissions.PermissionCallbacks {
 
     FloatingSearchView searchLocationBox;
     EditText filterBox;
@@ -91,6 +97,7 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     LinearLayout mapCardContainer;
     MapView mapView;
     GoogleMap map;
+    GoogleApiClient mGoogleApiClient;
 
     MainRestaurantCardAdapter mainRestaurantCardAdapter;
     LocationProviderHelper locationHelper;
@@ -179,11 +186,20 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        // Create an instance of GoogleAPIClient.
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                    .enableAutoManage(getActivity(), this)
+                    .addApi(LocationServices.API)
+                    .build();
+        }
+
         // Must be defined in onActivityCreated() because searchLocationBox is part of MainActivity.
         searchLocationBox = (FloatingSearchView) getActivity().findViewById(R.id.searchBox);
 
         // Create LocationProviderHelper instance.
-        locationHelper = new LocationProviderHelper(getActivity(), rootLayout, searchLocationBox);
+        locationHelper = new LocationProviderHelper(getActivity(), searchLocationBox,
+                mGoogleApiClient);
 
         // Get Google Map using OnMapReadyCallback
         mapView.getMapAsync(this);
@@ -455,6 +471,18 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     }
 
     @Override
+    public void onStart() {
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
+
+    @Override
+    public void onStop() {
+        mGoogleApiClient.disconnect();
+        super.onStop();
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         mapView.onResume();
@@ -494,11 +522,63 @@ public class MainActivityFragment extends Fragment implements OnMapReadyCallback
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        // Don't do anything if grantResults does not have 2 elements.
-        if (grantResults.length != 2) return;
+        // Forward results to EasyPermissions
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
 
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED)
-            locationHelper.requestLocation();
+    @Override
+    public void onPermissionsGranted(int requestCode, List<String> perms) {
+        locationHelper.onPermissionsGranted(requestCode, perms);
+    }
+
+    @Override
+    public void onPermissionsDenied(int requestCode, List<String> perms) {
+        locationHelper.onPermissionsDenied(requestCode, perms);
+    }
+
+    // Callback for checking location settings.
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case LocationProviderHelper.MY_REQUEST_CHECK_SETTINGS:
+                switch (resultCode) {
+                    case Activity.RESULT_OK: {
+                        // All required changes were successfully made
+                        Toast.makeText(getActivity(), "Location enabled by user!", Toast.LENGTH_LONG).show();
+                        locationHelper.requestLocation();
+                        break;
+                    }
+                    case Activity.RESULT_CANCELED: {
+                        // The user was asked to change settings, but chose not to
+                        Toast.makeText(getActivity(), "Location not enabled, user cancelled.", Toast.LENGTH_LONG).show();
+                        locationHelper.dismissLocationUpdater();
+                        break;
+                    }
+                    default: {
+                        Toast.makeText(getActivity(), "Never ask for location. " + requestCode, Toast.LENGTH_LONG).show();
+                        break;
+                    }
+                }
+                break;
+        }
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Toast.makeText(getContext(), "Error " + connectionResult.getErrorCode() +
+                ": failed to connect to Google Play Services", Toast.LENGTH_LONG).show();
     }
 
     /**

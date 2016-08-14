@@ -67,4 +67,13 @@ public class MainActivity extends AppCompatActivity {
         MainActivityFragment fragment = (MainActivityFragment) this.getSupportFragmentManager().findFragmentById(R.id.mainFragment);
         fragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Call MainActivityFragment's onActivityResult method.
+        MainActivityFragment fragment = (MainActivityFragment) this.getSupportFragmentManager().findFragmentById(R.id.mainFragment);
+        fragment.onActivityResult(requestCode, resultCode, data);
+    }
 }

@@ -5,7 +5,7 @@
     <string name="filter_hint">(Optional) Enter any filter, e.g. vegetarian, bbq, sushi</string>
     <string name="string_button_text_generate">GENERATE</string>
     <string name="string_button_text_loading">LOADING…</string>
-    <string name="string_empty_saved_list">You don\'t have restaurants added to your Saved List.</string>
+    <string name="string_empty_saved_list">You don\'t have any restaurants saved.</string>
     <string name="string_location_is_off">Location is off. Please enable Location in your settings.</string>
     <string name="string_getting_location">Getting location…</string>
     <string name="string_current_location">Current Location</string>
@@ -15,5 +15,10 @@
     <string name="string_timed_out_msg">Connection timed out, check your internet connection and try again.</string>
     <string name="string_task_running_msg">Task still running, please wait.</string>
     <string name="string_no_network">No network connection, please turn on your network.</string>
+    <string name="settings">Settings</string>
+    <string name="cancel">Cancel</string>
+    <string name="string_location_permission_required">Location permission are required to use GPS.</string>
+    <string name="string_location_perm_rationale">Location permissions have been denied. Please enable them manually in settings.</string>
+    <string name="string_lcoation_perm_manual">Location permissions denied. Please enter location manually.</string>
 
 </resources>
