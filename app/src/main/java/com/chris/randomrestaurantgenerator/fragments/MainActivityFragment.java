@@ -209,6 +209,7 @@ public class MainActivityFragment extends Fragment implements
             searchLocationBox.setSearchText(savedInstanceState.getString("locationQuery"));
             filterBox.setText(savedInstanceState.getString("filterQuery"));
             restaurants = savedInstanceState.getParcelableArrayList("restaurants");
+            Log.d("RRG", "restored saved instance state");
         }
 
         // Define actions on menu button clicks inside searchLocationBox.
@@ -419,6 +420,13 @@ public class MainActivityFragment extends Fragment implements
             }
         });
 
+        if (savedInstanceState != null) {
+            searchLocationBox.setSearchText(savedInstanceState.getString("locationQuery"));
+            filterBox.setText(savedInstanceState.getString("filterQuery"));
+            currentRestaurant = savedInstanceState.getParcelable("currentRestaurant");
+            restaurants = savedInstanceState.getParcelableArrayList("restaurants");
+        }
+
         // Reset all cache for showcase id.
         //MaterialShowcaseView.resetAll(getContext());
 
@@ -471,18 +479,6 @@ public class MainActivityFragment extends Fragment implements
     }
 
     @Override
-    public void onStart() {
-        mGoogleApiClient.connect();
-        super.onStart();
-    }
-
-    @Override
-    public void onStop() {
-        mGoogleApiClient.disconnect();
-        super.onStop();
-    }
-
-    @Override
     public void onResume() {
         super.onResume();
         mapView.onResume();
@@ -504,11 +500,6 @@ public class MainActivityFragment extends Fragment implements
 
         if (backgroundYelpQuery != null && backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
             backgroundYelpQuery.cancel(true);
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
     }
 
     // Google Maps API callback for MapFragment.
@@ -546,18 +537,18 @@ public class MainActivityFragment extends Fragment implements
                 switch (resultCode) {
                     case Activity.RESULT_OK: {
                         // All required changes were successfully made
-                        Toast.makeText(getActivity(), "Location enabled by user!", Toast.LENGTH_LONG).show();
+                        Log.d("RRG", "Location enabled by user!");
                         locationHelper.requestLocation();
                         break;
                     }
                     case Activity.RESULT_CANCELED: {
                         // The user was asked to change settings, but chose not to
-                        Toast.makeText(getActivity(), "Location not enabled, user cancelled.", Toast.LENGTH_LONG).show();
+                        Log.d("RRG", "Location not enabled, user cancelled.");
                         locationHelper.dismissLocationUpdater();
                         break;
                     }
                     default: {
-                        Toast.makeText(getActivity(), "Never ask for location. " + requestCode, Toast.LENGTH_LONG).show();
+                        Log.d("RRG", "User opted to never ask for location. ");
                         break;
                     }
                 }
@@ -567,18 +558,19 @@ public class MainActivityFragment extends Fragment implements
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-
+        Log.d("RRG", "Connected to Google Play Services.");
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-
+        Log.d("RRG", "onConnectionSuspended: " + i);
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Toast.makeText(getContext(), "Error " + connectionResult.getErrorCode() +
-                ": failed to connect to Google Play Services", Toast.LENGTH_LONG).show();
+                        ": failed to connect to Google Play Services. This may affect acquiring your location.",
+                Toast.LENGTH_LONG).show();
     }
 
     /**
