@@ -533,7 +533,7 @@ public class MainActivityFragment extends Fragment implements
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
-            case LocationProviderHelper.MY_REQUEST_CHECK_SETTINGS:
+            case LocationProviderHelper.REQUEST_CHECK_SETTINGS:
                 switch (resultCode) {
                     case Activity.RESULT_OK: {
                         // All required changes were successfully made

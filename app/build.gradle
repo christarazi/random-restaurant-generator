@@ -23,6 +23,9 @@ android {
             buildConfigField("String", "API_TOKEN_SECRET", "\"" + TOKEN_SECRET + "\"")
         }
         debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
             buildConfigField("String", "API_CONSUMER_KEY", "\"" + CONSUMER_KEY + "\"")
             buildConfigField("String", "API_CONSUMER_SECRET", "\"" + CONSUMER_SECRET + "\"")
             buildConfigField("String", "API_TOKEN", "\"" + TOKEN + "\"")

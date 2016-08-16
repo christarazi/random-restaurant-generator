@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.IntentSender;
 import android.location.Location;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
@@ -37,8 +38,7 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 public class LocationProviderHelper implements LocationListener,
         ResultCallback<LocationSettingsResult> {
 
-    public static final int MY_LOCATION_REQUEST_CODE = 1;
-    public static final int MY_REQUEST_CHECK_SETTINGS = 2;
+    public static final int REQUEST_CHECK_SETTINGS = 1;
     public static final int RC_LOCATION_PERM = 120;
     public static final String[] PERMISSIONS = new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION};
     public static boolean useGPS = false;
@@ -109,7 +109,7 @@ public class LocationProviderHelper implements LocationListener,
                     // and check the result in onActivityResult().
                     status.startResolutionForResult(
                             activity,
-                            MY_REQUEST_CHECK_SETTINGS);
+                            REQUEST_CHECK_SETTINGS);
                 } catch (IntentSender.SendIntentException e) {
                     // Ignore the error.
                 }
@@ -123,13 +123,13 @@ public class LocationProviderHelper implements LocationListener,
 
     // Called by EasyPermissions from MainActivityFragment
     public void onPermissionsGranted(int requestCode, List<String> perms) {
-        Toast.makeText(activity, "onPermissionsGranted:" + requestCode + ":" + perms.size(), Toast.LENGTH_SHORT).show();
+        Log.d("RRG", "onPermissionsGranted:" + requestCode + ":" + perms.size());
         requestLocation();
     }
 
     // Called by EasyPermissions from MainActivityFragment
     public void onPermissionsDenied(int requestCode, List<String> perms) {
-        Toast.makeText(activity, "onPermissionsDenied:" + requestCode + ":" + perms.size(), Toast.LENGTH_SHORT).show();
+        Log.d("RRG", "onPermissionsDenied:" + requestCode + ":" + perms.size());
 
         // Handle negative button on click listener
         DialogInterface.OnClickListener onClickListener = new DialogInterface.OnClickListener() {
@@ -149,6 +149,7 @@ public class LocationProviderHelper implements LocationListener,
     // Called by EasyPermissions when permissions are granted to automatically start acquiring location.
     @AfterPermissionGranted(RC_LOCATION_PERM)
     private void locationPermissionsGranted() {
+        Log.d("RRG", "locationPermissionsGranted");
         if (EasyPermissions.hasPermissions(activity, PERMISSIONS))
             requestLocation();
         else
@@ -168,18 +169,22 @@ public class LocationProviderHelper implements LocationListener,
     public void startLocationUpdates() {
         if (EasyPermissions.hasPermissions(activity, PERMISSIONS)) {
 
-            Toast.makeText(activity, "Starting location updates...", Toast.LENGTH_SHORT).show();
-            LocationServices.FusedLocationApi.requestLocationUpdates(
-                    mGoogleClient, mLocationRequest, this);
+            try {
+                Log.d("RRG", "Starting location updates...");
+                LocationServices.FusedLocationApi.requestLocationUpdates(
+                        mGoogleClient, mLocationRequest, this);
 
-            if (mLastLocation == null) {
-                mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleClient);
-                Toast.makeText(activity, "Got last location", Toast.LENGTH_SHORT).show();
-                progressDialog.dismiss();
-
-                if (mLastLocation != null) onLocationChanged(mLastLocation);
-                else Toast.makeText(activity, "Still null", Toast.LENGTH_SHORT).show();
+                if (mLastLocation == null) {
+                    mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleClient);
+                    Log.d("RRG", "Reusing last location");
+                    progressDialog.dismiss();
+                }
+            } catch (SecurityException ignored) {
+                // Ignoring exception because this is handled already by EasyPermissions.
             }
+
+            if (mLastLocation != null) onLocationChanged(mLastLocation);
+
         } else {
             EasyPermissions.requestPermissions(activity, activity.getString(R.string.string_location_permission_required),
                     RC_LOCATION_PERM, PERMISSIONS);

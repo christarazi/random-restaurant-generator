@@ -21,7 +21,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/_minus9sdp"
+                android:layout_marginBottom="@dimen/_minus4sdp"
                 android:background="?attr/colorPrimary"
                 app:popupTheme="@style/AppTheme.PopupOverlay">
 
@@ -31,14 +31,14 @@
                 android:id="@+id/searchBox"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_44sdp"
+                android:layout_marginBottom="@dimen/_1sdp"
                 android:layout_marginLeft="@dimen/_5sdp"
                 android:layout_marginRight="@dimen/_5sdp"
-                android:layout_marginBottom="@dimen/_1sdp"
                 android:imeOptions="actionNext"
-                app:floatingSearch_searchHint="Enter Location..."
                 app:floatingSearch_dimBackground="false"
+                app:floatingSearch_leftActionMode="noLeftAction"
                 app:floatingSearch_menu="@menu/search_box_menu"
-                app:floatingSearch_leftActionMode="noLeftAction" >
+                app:floatingSearch_searchHint="Enter Location...">
             </com.arlib.floatingsearchview.FloatingSearchView>
 
         </LinearLayout>
