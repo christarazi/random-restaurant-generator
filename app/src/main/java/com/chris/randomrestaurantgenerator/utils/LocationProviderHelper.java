@@ -177,13 +177,19 @@ public class LocationProviderHelper implements LocationListener,
                 if (mLastLocation == null) {
                     mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleClient);
                     Log.d("RRG", "Reusing last location");
-                    progressDialog.dismiss();
+                }
+
+                // Make sure mLastLocation is not null because getLastLocation() may return null.
+                if (mLastLocation != null) {
+                    onLocationChanged(mLastLocation);
+                } else {
+                    progressDialog.show();
+                    LocationServices.FusedLocationApi.requestLocationUpdates(
+                            mGoogleClient, mLocationRequest, this);
                 }
             } catch (SecurityException ignored) {
                 // Ignoring exception because this is handled already by EasyPermissions.
             }
-
-            if (mLastLocation != null) onLocationChanged(mLastLocation);
 
         } else {
             EasyPermissions.requestPermissions(activity, activity.getString(R.string.string_location_permission_required),
