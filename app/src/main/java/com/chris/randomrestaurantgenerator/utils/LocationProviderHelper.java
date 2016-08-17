@@ -61,7 +61,7 @@ public class LocationProviderHelper implements LocationListener,
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(120000);
         mLocationRequest.setFastestInterval(60000);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
         builder.addLocationRequest(mLocationRequest);
@@ -86,10 +86,13 @@ public class LocationProviderHelper implements LocationListener,
 
     @Override
     public void onLocationChanged(Location location) {
-        mCurrentLocation = location;
-        progressDialog.dismiss();
-        Toast.makeText(activity, "onLocationChanged", Toast.LENGTH_SHORT).show();
-        searchLocationBox.setSearchText(activity.getString(R.string.string_current_location));
+        if (location.hasAccuracy() && location.getAccuracy() < 200.0) {
+            mCurrentLocation = location;
+            progressDialog.dismiss();
+            Log.d("RRG", "onLocationChanged");
+            searchLocationBox.setSearchText(activity.getString(R.string.string_current_location));
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleClient, this);
+        }
     }
 
     @Override
