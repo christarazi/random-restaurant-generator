@@ -25,7 +25,6 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 import java.util.Arrays;
 import java.util.List;
 
-import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -138,7 +137,7 @@ public class LocationProviderHelper implements LocationListener,
         DialogInterface.OnClickListener onClickListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                Toast.makeText(activity, R.string.string_lcoation_perm_manual, Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, R.string.string_location_perm_manual, Toast.LENGTH_SHORT).show();
             }
         };
 
@@ -147,17 +146,6 @@ public class LocationProviderHelper implements LocationListener,
         EasyPermissions.checkDeniedPermissionsNeverAskAgain(activity,
                 activity.getString(R.string.string_location_perm_rationale),
                 R.string.settings, R.string.cancel, onClickListener, Arrays.asList(PERMISSIONS));
-    }
-
-    // Called by EasyPermissions when permissions are granted to automatically start acquiring location.
-    @AfterPermissionGranted(RC_LOCATION_PERM)
-    private void locationPermissionsGranted() {
-        Log.d("RRG", "locationPermissionsGranted");
-        if (EasyPermissions.hasPermissions(activity, PERMISSIONS))
-            requestLocation();
-        else
-            EasyPermissions.requestPermissions(activity, activity.getString(R.string.string_location_permission_required),
-                    RC_LOCATION_PERM, PERMISSIONS);
     }
 
     public void checkLocationSettings() {
@@ -215,8 +203,10 @@ public class LocationProviderHelper implements LocationListener,
         progressDialog.dismiss();
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleClient, this);
 
-        if (mCurrentLocation != null)
+        if (mCurrentLocation != null) {
             mLastLocation = mCurrentLocation;
+            Log.d("RRG", "Saved location on pause");
+        }
     }
 
     public void dismissLocationUpdater() {

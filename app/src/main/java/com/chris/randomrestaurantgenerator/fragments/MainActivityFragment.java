@@ -120,11 +120,6 @@ public class MainActivityFragment extends Fragment implements
     AsyncTask backgroundYelpQuery;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
@@ -478,7 +473,6 @@ public class MainActivityFragment extends Fragment implements
             backgroundYelpQuery.cancel(true);
 
         locationHelper.pauseAndSaveLocationUpdates();
-        Toast.makeText(getContext(), "onPause", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -495,7 +489,6 @@ public class MainActivityFragment extends Fragment implements
     public void onDestroy() {
         super.onDestroy();
         mapView.onDestroy();
-        Log.d("RRG", "Destroyed");
 
         // Try to cancel the AsyncTask.
         if (initialYelpQuery != null && initialYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
@@ -503,6 +496,8 @@ public class MainActivityFragment extends Fragment implements
 
         if (backgroundYelpQuery != null && backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
             backgroundYelpQuery.cancel(true);
+
+        Log.d("RRG", "onDestroy");
     }
 
     // Google Maps API callback for MapFragment.
@@ -598,7 +593,7 @@ public class MainActivityFragment extends Fragment implements
         return new MaterialShowcaseView.Builder(getActivity())
                 .setTarget(target)
                 .setShape(shape)
-                .setMaskColour(Color.rgb(0, 166, 237))
+                .setMaskColour(Color.argb(230, 0, 166, 237))
                 .setContentText(contentText)
                 .setDismissText("GOT IT")
                 .build();
@@ -756,7 +751,7 @@ public class MainActivityFragment extends Fragment implements
     /**
      * Convert JSON to a Restaurant object that encapsulates a restaurant from Yelp.
      *
-     * @param obj: JSONObejct that holds all restaurant info.
+     * @param obj: JSONObject that holds all restaurant info.
      * @return Restaurant or null if an error occurs.
      */
     private Restaurant convertJSONToRestaurant(JSONObject obj) {

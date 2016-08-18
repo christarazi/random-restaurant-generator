@@ -6,7 +6,6 @@
     <string name="string_button_text_generate">GENERATE</string>
     <string name="string_button_text_loading">LOADING…</string>
     <string name="string_empty_saved_list">You don\'t have any restaurants saved.</string>
-    <string name="string_location_is_off">Location is off. Please enable Location in your settings.</string>
     <string name="string_getting_location">Getting location…</string>
     <string name="string_current_location">Current Location</string>
     <string name="string_location_not_found">"Location has not been found yet. Please try again. Acquiring GPS signal may take up to a minute on some devices."</string>
@@ -19,6 +18,6 @@
     <string name="cancel">Cancel</string>
     <string name="string_location_permission_required">Location permission are required to use GPS.</string>
     <string name="string_location_perm_rationale">Location permissions have been denied. Please enable them manually in settings.</string>
-    <string name="string_lcoation_perm_manual">Location permissions denied. Please enter location manually.</string>
+    <string name="string_location_perm_manual">Location permissions denied. Please enter location manually.</string>
 
 </resources>

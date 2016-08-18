@@ -18,7 +18,6 @@ import com.chris.randomrestaurantgenerator.models.Restaurant;
 import com.chris.randomrestaurantgenerator.utils.SavedListHolder;
 import com.squareup.picasso.Picasso;
 
-import java.util.ArrayList;
 import java.util.Locale;
 
 /**
@@ -149,7 +148,6 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            ArrayList<Restaurant> r = dbHelper.getAll();
         }
     }
 }

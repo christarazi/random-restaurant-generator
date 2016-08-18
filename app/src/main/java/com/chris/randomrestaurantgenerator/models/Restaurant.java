@@ -61,13 +61,13 @@ public class Restaurant implements Parcelable {
         reviewCount = in.readInt();
         url = in.readString();
         if (in.readByte() == 0x01) {
-            categories = new ArrayList<String>();
+            categories = new ArrayList<>();
             in.readList(categories, String.class.getClassLoader());
         } else {
             categories = null;
         }
         if (in.readByte() == 0x01) {
-            address = new ArrayList<String>();
+            address = new ArrayList<>();
             in.readList(address, String.class.getClassLoader());
         } else {
             address = null;
