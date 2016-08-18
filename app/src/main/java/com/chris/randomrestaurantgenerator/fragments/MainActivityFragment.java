@@ -476,6 +476,9 @@ public class MainActivityFragment extends Fragment implements
 
         if (backgroundYelpQuery != null && backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
             backgroundYelpQuery.cancel(true);
+
+        locationHelper.pauseAndSaveLocationUpdates();
+        Toast.makeText(getContext(), "onPause", Toast.LENGTH_SHORT).show();
     }
 
     @Override

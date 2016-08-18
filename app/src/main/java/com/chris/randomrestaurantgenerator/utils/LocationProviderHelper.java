@@ -59,8 +59,8 @@ public class LocationProviderHelper implements LocationListener,
         this.mGoogleClient = googleApiClient;
 
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(120000);
-        mLocationRequest.setFastestInterval(60000);
+        mLocationRequest.setInterval(60000);
+        mLocationRequest.setFastestInterval(5000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
@@ -89,7 +89,7 @@ public class LocationProviderHelper implements LocationListener,
         if (location.hasAccuracy() && location.getAccuracy() < 200.0) {
             mCurrentLocation = location;
             progressDialog.dismiss();
-            Log.d("RRG", "onLocationChanged");
+            Log.d("RRG", "onLocationChanged: " + location.getAccuracy() + "m");
             searchLocationBox.setSearchText(activity.getString(R.string.string_current_location));
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleClient, this);
         }
@@ -209,6 +209,14 @@ public class LocationProviderHelper implements LocationListener,
             EasyPermissions.requestPermissions(activity, activity.getString(R.string.string_location_permission_required),
                     RC_LOCATION_PERM, PERMISSIONS);
         }
+    }
+
+    public void pauseAndSaveLocationUpdates() {
+        progressDialog.dismiss();
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleClient, this);
+
+        if (mCurrentLocation != null)
+            mLastLocation = mCurrentLocation;
     }
 
     public void dismissLocationUpdater() {
