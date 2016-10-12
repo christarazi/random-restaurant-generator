@@ -8,8 +8,8 @@ android {
         applicationId "com.chris.randomrestaurantgenerator"
         minSdkVersion 15
         targetSdkVersion 24
-        versionCode 5
-        versionName "1.2"
+        versionCode 6
+        versionName "1.2.1"
     }
     buildTypes {
         release {
