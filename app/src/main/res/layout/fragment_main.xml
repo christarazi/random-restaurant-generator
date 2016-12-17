@@ -4,8 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingBottom="0dp"
-    android:paddingLeft="0dp"
-    android:paddingRight="0dp"
     android:paddingTop="0dp"
     tools:context=".MainActivity"
     tools:showIn="@layout/activity_main">
@@ -16,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="@dimen/_6sdp"
         android:layout_marginRight="@dimen/_6sdp"
-        android:layout_marginTop="@dimen/_4sdp"
+        android:layout_marginTop="@dimen/_6sdp"
         android:orientation="vertical"
         android:visibility="gone">
 
@@ -80,7 +78,7 @@
         android:layout_height="@dimen/_44sdp"
         android:layout_below="@id/filtersLayout"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="@dimen/_4sdp"
+        android:layout_marginTop="@dimen/_6sdp"
         android:indeterminate="true"
         android:visibility="gone"
         app:cpb_colors="@array/gplus_colors"
@@ -98,11 +96,8 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginTop="@dimen/_4sdp"
         android:background="#F6511D"
         android:padding="0dp"
-        android:paddingLeft="@dimen/_40sdp"
-        android:paddingRight="@dimen/_40sdp"
         android:text="@string/string_button_text_generate"
         android:textColor="#FFFFFF"
         android:textSize="@dimen/_16sdp" />
@@ -111,7 +106,8 @@
         android:id="@+id/restaurantView"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_130sdp"
-        android:layout_below="@+id/filtersLayout">
+        android:layout_below="@+id/filtersLayout"
+        android:layout_marginTop="@dimen/_6sdp">
 
     </android.support.v7.widget.RecyclerView>
 
@@ -127,10 +123,10 @@
         <android.support.v7.widget.CardView
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:layout_marginBottom="@dimen/_4sdp"
-            android:layout_marginLeft="@dimen/_8sdp"
-            android:layout_marginRight="@dimen/_8sdp"
-            android:layout_marginTop="@dimen/_4sdp"
+            android:layout_marginBottom="@dimen/_8sdp"
+            android:layout_marginLeft="@dimen/_7sdp"
+            android:layout_marginRight="@dimen/_7sdp"
+            android:layout_marginTop="@dimen/_6sdp"
             map:cardCornerRadius="@dimen/_2sdp"
             map:cardElevation="2dp">
 
