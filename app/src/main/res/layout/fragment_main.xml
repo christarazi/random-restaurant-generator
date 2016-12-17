@@ -10,46 +10,85 @@
     tools:context=".MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <android.support.design.widget.TextInputLayout
-        android:id="@+id/tilUserFilter"
+    <LinearLayout
+        android:id="@+id/filtersLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_4sdp">
+        android:layout_marginLeft="@dimen/_6sdp"
+        android:layout_marginRight="@dimen/_6sdp"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:orientation="vertical"
+        android:visibility="gone">
 
-        <EditText
-            android:id="@+id/filterBox"
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginLeft="@dimen/_6sdp"
-            android:layout_marginRight="@dimen/_6sdp"
-            android:background="?editTextBackground"
-            android:gravity="center_vertical|start"
-            android:hint="@string/filter_hint"
-            android:imeOptions="actionDone"
-            android:singleLine="true"
-            android:textSize="@dimen/_12sdp"
-            android:visibility="gone"/>
+            android:gravity="center"
+            android:text="@string/string_filter_msg"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="@color/dark_gray" />
 
-    </android.support.design.widget.TextInputLayout>
+        <android.support.design.widget.TextInputLayout
+            android:id="@+id/tilUserFilter"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/_8sdp">
+
+            <EditText
+                android:id="@+id/filterBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:background="?editTextBackground"
+                android:gravity="center_vertical|start"
+                android:hint="@string/filter_hint"
+                android:imeOptions="actionDone"
+                android:textSize="@dimen/_12sdp" />
+
+        </android.support.design.widget.TextInputLayout>
+
+        <LinearLayout
+            android:id="@+id/priceFilterLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/_8sdp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/priceFilter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:text="@string/string_price_range"
+                android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+
+            <SeekBar
+                android:id="@+id/priceFilterBar"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+    </LinearLayout>
 
     <fr.castorflex.android.circularprogressbar.CircularProgressBar
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/circularProgressBarMainFragment"
         android:layout_width="@dimen/_44sdp"
         android:layout_height="@dimen/_44sdp"
+        android:layout_below="@id/filtersLayout"
+        android:layout_centerHorizontal="true"
         android:layout_marginTop="@dimen/_4sdp"
         android:indeterminate="true"
+        android:visibility="gone"
         app:cpb_colors="@array/gplus_colors"
-        app:cpb_rotation_speed="1.0"
-        app:cpb_sweep_speed="1.0"
-        app:cpb_stroke_width="4dp"
-        app:cpb_min_sweep_angle="10"
         app:cpb_max_sweep_angle="300"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@id/tilUserFilter"
-        android:id="@+id/circularProgressBarMainFragment"
-        android:visibility="gone"/>
+        app:cpb_min_sweep_angle="10"
+        app:cpb_rotation_speed="1.0"
+        app:cpb_stroke_width="4dp"
+        app:cpb_sweep_speed="1.0" />
 
     <android.support.v7.widget.AppCompatButton
         android:id="@+id/generate"
@@ -72,7 +111,7 @@
         android:id="@+id/restaurantView"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_130sdp"
-        android:layout_below="@+id/tilUserFilter">
+        android:layout_below="@+id/filtersLayout">
 
     </android.support.v7.widget.RecyclerView>
 

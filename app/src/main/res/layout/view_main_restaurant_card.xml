@@ -8,20 +8,20 @@
     android:layout_marginLeft="@dimen/_8sdp"
     android:layout_marginRight="@dimen/_8sdp"
     android:layout_marginTop="@dimen/_4sdp"
-    map:contentPadding="@dimen/_4sdp"
     map:cardCornerRadius="@dimen/_2sdp"
-    map:cardElevation="2dp">
+    map:cardElevation="2dp"
+    map:contentPadding="@dimen/_4sdp">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <LinearLayout
+            android:id="@+id/imageHolder"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="@dimen/_4sdp"
-            android:id="@+id/imageHolder">
+            android:padding="@dimen/_4sdp">
 
             <ImageView
                 android:id="@+id/thumbnail"
@@ -39,23 +39,23 @@
             android:id="@+id/name"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_toEndOf="@+id/imageHolder"
+            android:layout_toRightOf="@+id/imageHolder"
             android:gravity="top"
-            android:textSize="@dimen/_16sdp"
             android:paddingLeft="@dimen/_4sdp"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:layout_toRightOf="@+id/imageHolder"
-            android:layout_toEndOf="@+id/imageHolder" />
+            android:textSize="@dimen/_16sdp" />
 
         <TextView
             android:id="@+id/categories"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/_12sdp"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:paddingLeft="@dimen/_4sdp"
-            android:layout_toRightOf="@+id/imageHolder"
+            android:layout_below="@id/name"
             android:layout_toEndOf="@+id/imageHolder"
-            android:layout_below="@id/name" />
+            android:layout_toRightOf="@+id/imageHolder"
+            android:paddingLeft="@dimen/_4sdp"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textSize="@dimen/_12sdp" />
 
         <TextView
             android:id="@+id/deals"
@@ -70,26 +70,26 @@
             android:textSize="@dimen/_12sdp" />
 
         <TextView
-            android:id="@+id/distanceAndReviewCount"
+            android:id="@+id/distancePriceReviewCount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="@dimen/_4sdp"
-            android:textAppearance="?android:attr/textAppearanceSmall"
             android:layout_below="@+id/deals"
+            android:layout_toEndOf="@+id/imageHolder"
             android:layout_toRightOf="@+id/imageHolder"
-            android:layout_toEndOf="@+id/imageHolder" />
+            android:paddingLeft="@dimen/_4sdp"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
 
         <ImageButton
+            android:id="@+id/saveButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/saveButton"
-            android:src="@drawable/bookmark_outline_plus"
-            android:padding="@dimen/_4sdp"
             android:layout_alignBottom="@id/imageHolder"
-            android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
             android:background="?android:attr/selectableItemBackground"
-            android:clickable="true"/>
+            android:clickable="true"
+            android:padding="@dimen/_4sdp"
+            android:src="@drawable/bookmark_outline_plus" />
 
     </RelativeLayout>
 

@@ -5,8 +5,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -28,6 +26,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,7 +38,6 @@ import com.chris.randomrestaurantgenerator.R;
 import com.chris.randomrestaurantgenerator.managers.UnscrollableLinearLayoutManager;
 import com.chris.randomrestaurantgenerator.models.Restaurant;
 import com.chris.randomrestaurantgenerator.utils.LocationProviderHelper;
-import com.chris.randomrestaurantgenerator.utils.TwoStepOAuth;
 import com.chris.randomrestaurantgenerator.utils.TypeOfError;
 import com.chris.randomrestaurantgenerator.views.MainRestaurantCardAdapter;
 import com.google.android.gms.common.ConnectionResult;
@@ -55,20 +53,15 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.scribe.builder.ServiceBuilder;
-import org.scribe.exceptions.OAuthConnectionException;
-import org.scribe.model.OAuthRequest;
-import org.scribe.model.Response;
-import org.scribe.model.Token;
-import org.scribe.model.Verb;
-import org.scribe.oauth.OAuthService;
 
-import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 import fr.castorflex.android.circularprogressbar.CircularProgressBar;
 import fr.castorflex.android.circularprogressbar.CircularProgressDrawable;
@@ -89,12 +82,16 @@ public class MainActivityFragment extends Fragment implements
 
     FloatingSearchView searchLocationBox;
     EditText filterBox;
+    SeekBar priceFilterBar;
+    TextView priceFilter;
     Button generate;
     int generateBtnColor;
 
     RelativeLayout rootLayout;
     RecyclerView restaurantView;
     LinearLayout mapCardContainer;
+    LinearLayout filtersLayout;
+    LinearLayout priceFilterLayout;
     MapView mapView;
     GoogleMap map;
     GoogleApiClient mGoogleApiClient;
@@ -104,8 +101,7 @@ public class MainActivityFragment extends Fragment implements
     Restaurant currentRestaurant;
     ArrayList<Restaurant> restaurants = new ArrayList<>();
 
-    OAuthService service;
-    Token accessToken;
+    String accessToken;
 
     int errorInQuery;
     boolean taskRunning = false;
@@ -126,6 +122,8 @@ public class MainActivityFragment extends Fragment implements
         super.onCreateView(inflater, container, savedInstanceState);
 
         rootLayout = (RelativeLayout) inflater.inflate(R.layout.fragment_main, container, false);
+        filtersLayout = (LinearLayout) rootLayout.findViewById(R.id.filtersLayout);
+        priceFilterLayout = (LinearLayout) filtersLayout.findViewById(R.id.priceFilterLayout);
         restaurantView = (RecyclerView) rootLayout.findViewById(R.id.restaurantView);
         restaurantView.setLayoutManager(new UnscrollableLinearLayoutManager(getContext()));
 
@@ -137,13 +135,13 @@ public class MainActivityFragment extends Fragment implements
         mapView.onCreate(mapViewSavedInstanceState);
 
         filterBox = (EditText) rootLayout.findViewById(R.id.filterBox);
+        priceFilterBar = (SeekBar) rootLayout.findViewById(R.id.priceFilterBar);
+        priceFilter = (TextView) rootLayout.findViewById(R.id.priceFilter);
         generate = (Button) rootLayout.findViewById(R.id.generate);
         generateBtnColor = Color.parseColor("#F6511D");
 
-        // Build OAuth service.
-        service = new ServiceBuilder().provider(TwoStepOAuth.class).apiKey(TwoStepOAuth.getConsumerKey())
-                .apiSecret(TwoStepOAuth.getConsumerSecret()).build();
-        accessToken = new Token(TwoStepOAuth.getToken(), TwoStepOAuth.getTokenSecret());
+        // Yelp API access token
+        accessToken = BuildConfig.API_ACCESS_TOKEN;
 
         progressBar = (CircularProgressBar) rootLayout.findViewById(R.id.circularProgressBarMainFragment);
 
@@ -216,14 +214,14 @@ public class MainActivityFragment extends Fragment implements
                 if (id == R.id.search_box_gps)
                     locationHelper.requestLocation();
                 else if (id == R.id.search_box_filter) {
-                    if (filterBox.getVisibility() == View.GONE) {
-                        filterBox.setVisibility(View.VISIBLE);
+                    if (filtersLayout.getVisibility() == View.GONE) {
+                        showFilterElements();
 
                         // Show tutorial about entering multiple filters.
                         displayShowcaseViewFilterBox();
+                    } else if (filtersLayout.getVisibility() == View.VISIBLE) {
+                        showNormalLayout();
                     }
-                    else if (filterBox.getVisibility() == View.VISIBLE)
-                        filterBox.setVisibility(View.GONE);
                 }
             }
         });
@@ -252,6 +250,29 @@ public class MainActivityFragment extends Fragment implements
             }
         });
 
+        priceFilterBar.incrementProgressBy(1);
+        priceFilterBar.setMax(4);
+        priceFilterBar.setProgress(0);
+        priceFilterBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int seek, boolean b) {
+                String price = "";
+                for (int i = 0; i < seek; i++)
+                    price += "$";
+                priceFilter.setText(price);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
         // When the user clicks the Generate button.
         generate.setOnClickListener(new View.OnClickListener() {
 
@@ -267,7 +288,8 @@ public class MainActivityFragment extends Fragment implements
                     return;
                 }
 
-                filterBox.setVisibility(View.GONE);
+                showFilterElements();
+                showNormalLayout();
 
                 /**
                  * Initialize searchQuery and filterQuery if they're empty.
@@ -640,6 +662,18 @@ public class MainActivityFragment extends Fragment implements
         filterShowcase.start();
     }
 
+    private void showFilterElements() {
+        filtersLayout.setVisibility(View.VISIBLE);
+        mapCardContainer.setVisibility(View.GONE);
+        restaurantView.setVisibility(View.GONE);
+    }
+
+    private void showNormalLayout() {
+        filtersLayout.setVisibility(View.GONE);
+        mapCardContainer.setVisibility(View.VISIBLE);
+        restaurantView.setVisibility(View.VISIBLE);
+    }
+
     /**
      * Helper function to display an AlertDialog
      * @param stringToDisplay:  the string to display in the alert.
@@ -671,36 +705,56 @@ public class MainActivityFragment extends Fragment implements
      */
     private boolean queryYelp(String lat, String lon, String input,
                               String filter, int offset, int whichAsyncTask) {
+
+        // Build Yelp request.
         try {
-            OAuthRequest request;
+            String requestUrl = "https://api.yelp.com/v3/businesses/search";
+            URL url;
+            HttpURLConnection urlConnection;
 
             if (LocationProviderHelper.useGPS) {
-                request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + filter +
-                        "&ll=" + lat + "," + lon + "&offset=" + offset);
+                requestUrl += "?" + filter;
+                requestUrl += "&latitude=" + lat;
+                requestUrl += "&longitude=" + lon;
+                requestUrl += "&offset=" + offset;
 
-                request.setConnectTimeout(10, TimeUnit.SECONDS);
-                request.setReadTimeout(10, TimeUnit.SECONDS);
+                url = new URL(requestUrl);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.addRequestProperty("Authorization", "Bearer " + accessToken);
+                urlConnection.setConnectTimeout(10 * 1000);
+                urlConnection.setReadTimeout(10 * 1000);
 
-                Log.d("RRG", "request made: " + "https://api.yelp.com/v2/search?" + filter +
-                        "&ll=" + lat + "," + lon + "&offset=" + offset);
+                Log.d("RRG", "request made: " + requestUrl);
             } else {
-                request = new OAuthRequest(Verb.GET, "https://api.yelp.com/v2/search?" + filter +
-                        "&location=" + input + "&offset=" + offset);
+                requestUrl += "?" + filter;
+                requestUrl += "&location=" + input;
+                requestUrl += "&offset=" + offset;
 
-                request.setConnectTimeout(10, TimeUnit.SECONDS);
-                request.setReadTimeout(10, TimeUnit.SECONDS);
+                url = new URL(requestUrl);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.addRequestProperty("Authorization", "Bearer " + accessToken);
+                urlConnection.setConnectTimeout(10 * 1000);
+                urlConnection.setReadTimeout(10 * 1000);
 
-                Log.d("RRG", "request made: " + "https://api.yelp.com/v2/search?" + filter +
-                        "&location=" + input + "&offset=" + offset);
+                Log.d("RRG", "request made: " + requestUrl);
             }
 
-            service.signRequest(accessToken, request);
-            Response response = request.send();
+            // Make connection and read the response.
+            urlConnection.connect();
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(urlConnection.getInputStream()));
 
-            // Get JSON array that holds the restaurants from Yelp.
-            JSONArray jsonBusinessesArray = new JSONObject(response.getBody())
-                    .getJSONArray("businesses");
+            StringBuilder sb = new StringBuilder();
+            String buf, jsonString;
+            while ((buf = br.readLine()) != null)
+                sb.append(buf);
+            br.close();
+            jsonString = sb.toString();
 
+            JSONObject response = new JSONObject(jsonString);
+
+            // Get JSON array that holds the listings from Yelp.
+            JSONArray jsonBusinessesArray = response.getJSONArray("businesses");
             int length = jsonBusinessesArray.length();
 
             // This occurs if a network communication error occurs or if no restaurants were found.
@@ -715,7 +769,6 @@ public class MainActivityFragment extends Fragment implements
                 else if (whichAsyncTask == 1 && backgroundYelpQuery.isCancelled())
                     break;
 
-
                 Restaurant res = convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(i));
                 if (res != null)
                     restaurants.add(res);
@@ -726,10 +779,6 @@ public class MainActivityFragment extends Fragment implements
                 return false;
             }
 
-        } catch (OAuthConnectionException e) {
-            errorInQuery = TypeOfError.NETWORK_CONNECTION_ERROR;
-            e.printStackTrace();
-            return false;
         } catch (JSONException e) {
             if (e.getMessage().contains("No value for businesses"))
                 errorInQuery = TypeOfError.NO_RESTAURANTS;
@@ -756,51 +805,21 @@ public class MainActivityFragment extends Fragment implements
      */
     private Restaurant convertJSONToRestaurant(JSONObject obj) {
         try {
+            Log.d("RRG", "convertJSONToRestaurant: " + obj);
             // Getting the JSON array of categories
             JSONArray categoriesJSON = obj.getJSONArray("categories");
             ArrayList<String> categories = new ArrayList<>();
 
-            for (int i = 0; i < categoriesJSON.length(); i += 2)
-                for (int j = 0; j < categoriesJSON.getJSONArray(i).length(); j += 2)
-                    categories.add(categoriesJSON.getJSONArray(i).getString(j));
+            for (int i = 0; i < categoriesJSON.length(); i++)
+                categories.add(categoriesJSON.getJSONObject(i).getString("title"));
 
-            // Getting the restaurant's location information
-            JSONObject locationJSON = obj.getJSONObject("location");
-
-            double lat = locationJSON.getJSONObject("coordinate").getDouble("latitude");
-            double lon = locationJSON.getJSONObject("coordinate").getDouble("longitude");
-
-            float distance;
-            Location restaurantLoc = new Location("restaurantLoc");
-            restaurantLoc.setLatitude(lat);
-            restaurantLoc.setLongitude(lon);
-            if (LocationProviderHelper.useGPS) {
-                distance = locationHelper.getLocation().distanceTo(restaurantLoc);
-            } else {
-                Geocoder geocoder = new Geocoder(getContext());
-
-                List<Address> addressList;
-                try {
-                    addressList = geocoder.getFromLocationName(searchLocationBox.getQuery(), 1);
-                    double estimatedLat = addressList.get(0).getLatitude();
-                    double estimatedLon = addressList.get(0).getLongitude();
-                    Location estimatedLocation = new Location("estimatedLocation");
-                    estimatedLocation.setLatitude(estimatedLat);
-                    estimatedLocation.setLongitude(estimatedLon);
-                    distance = estimatedLocation.distanceTo(restaurantLoc);
-                } catch (IOException io) {
-                    /*
-                     * If we get an IOException, that means geocoder.getFromLocationName() timed out.
-                     * Sometimes it times out, so set distance to 0 if it does.
-                     * See below bug report:
-                     * https://code.google.com/p/gmaps-api-issues/issues/detail?id=9153
-                     */
-                    distance = 0.0f;
-                }
-            }
-            distance *= 0.000621371;    // Convert to miles
+            // Getting the restaurant's coordinates and price
+            double lat = obj.getJSONObject("coordinates").getDouble("latitude");
+            double lon = obj.getJSONObject("coordinates").getDouble("longitude");
+            double distance = obj.getDouble("distance") * 0.000621371; // Convert to miles
 
             // Getting restaurant's address
+            JSONObject locationJSON = obj.getJSONObject("location");
             JSONArray addressJSON = locationJSON.getJSONArray("display_address");
             ArrayList<String> address = new ArrayList<>();
 
@@ -822,12 +841,27 @@ public class MainActivityFragment extends Fragment implements
                 deals = "";
             }
 
+            // If restaurant doesn't have a price, put a question mark.
+            String price;
+            try {
+                price = obj.getString("price");
+            } catch (Exception ignored) {
+                price = "?";
+            }
+
+            // If listing does not have an image, make sure it routes to localhost because
+            // Picasso will complain when a URL string is empty.
+            String imageUrl = obj.getString("image_url");
+            if (imageUrl.length() == 0)
+                imageUrl = "localhost";
+
             // Construct a new Restaurant object with all the info we gathered above and return it
             return new Restaurant(obj.getString("name"), (float) obj.getDouble("rating"),
-                    obj.getString("rating_img_url_large"), obj.getString("image_url"), obj.getInt("review_count"),
-                    obj.getString("url"), categories, address, deals, distance, lat, lon);
+                    imageUrl, obj.getInt("review_count"), obj.getString("url"),
+                    categories, address, deals, price, distance, lat, lon);
         } catch (Exception e) {
             e.printStackTrace();
+            Log.d("RRG", "convertJSONToRestaurant: " + e.getMessage());
             return null;
         }
     }
@@ -859,7 +893,7 @@ public class MainActivityFragment extends Fragment implements
         String userFilterStr;
         boolean successfulQuery;
 
-        public RunYelpQuery(boolean runBackgroundQuery, String... params) {
+        RunYelpQuery(boolean runBackgroundQuery, String... params) {
             runBackgroundQueryAfter = runBackgroundQuery;
             this.params = params;
             userInputStr = params[0];
@@ -1027,7 +1061,7 @@ public class MainActivityFragment extends Fragment implements
 
         int offset;
 
-        public RunYelpQueryBackground(int offset) {
+        RunYelpQueryBackground(int offset) {
             this.offset = offset;
         }
 

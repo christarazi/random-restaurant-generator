@@ -24,39 +24,38 @@ public class Restaurant implements Parcelable {
     };
     private String name;
     private float rating;
-    private String ratingImageURL;
     private String thumbnailURL;
     private int reviewCount;
     private String url;
     private ArrayList<String> categories;
     private ArrayList<String> address;
     private String deal;
+    private String price;
     private double distance;
     private double lat;
     private double lon;
     private boolean isSaved;
 
-    public Restaurant(String name, float rating, String ratingImageURL, String thumbnailURL, int reviewCount,
+    public Restaurant(String name, float rating, String thumbnailURL, int reviewCount,
                       String url, ArrayList<String> categories, ArrayList<String> address,
-                      String deal, double distance, double lat, double lon) {
+                      String deal, String price, double distance, double lat, double lon) {
         this.name = name;
         this.rating = rating;
-        this.ratingImageURL = ratingImageURL;
         this.thumbnailURL = thumbnailURL;
         this.reviewCount = reviewCount;
         this.url = url;
         this.categories = categories;
         this.address = address;
         this.deal = deal;
+        this.price = price;
         this.distance = distance;
         this.lat = lat;
         this.lon = lon;
     }
 
-    protected Restaurant(Parcel in) {
+    private Restaurant(Parcel in) {
         name = in.readString();
         rating = in.readFloat();
-        ratingImageURL = in.readString();
         thumbnailURL = in.readString();
         reviewCount = in.readInt();
         url = in.readString();
@@ -73,6 +72,7 @@ public class Restaurant implements Parcelable {
             address = null;
         }
         deal = in.readString();
+        price = in.readString();
         distance = in.readDouble();
         lat = in.readDouble();
         lon = in.readDouble();
@@ -82,7 +82,7 @@ public class Restaurant implements Parcelable {
         return name;
     }
 
-    public float getRating() {
+    public double getRating() {
         return rating;
     }
 
@@ -102,16 +102,16 @@ public class Restaurant implements Parcelable {
         return address;
     }
 
-    public String getRatingImageURL() {
-        return ratingImageURL;
-    }
-
     public String getThumbnailURL() {
         return thumbnailURL;
     }
 
     public String getDeal() {
         return deal;
+    }
+
+    public String getPrice() {
+        return price;
     }
 
     public double getDistance() {
@@ -143,7 +143,6 @@ public class Restaurant implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(name);
         dest.writeFloat(rating);
-        dest.writeString(ratingImageURL);
         dest.writeString(thumbnailURL);
         dest.writeInt(reviewCount);
         dest.writeString(url);
@@ -160,6 +159,7 @@ public class Restaurant implements Parcelable {
             dest.writeList(address);
         }
         dest.writeString(deal);
+        dest.writeString(price);
         dest.writeDouble(distance);
         dest.writeDouble(lat);
         dest.writeDouble(lon);

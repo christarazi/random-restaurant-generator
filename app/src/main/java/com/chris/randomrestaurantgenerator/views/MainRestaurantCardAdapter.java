@@ -1,9 +1,14 @@
 package com.chris.randomrestaurantgenerator.views;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,10 +30,10 @@ import java.util.Locale;
  */
 public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaurantCardAdapter.RestaurantViewHolder> {
 
-    Context context;
-    Restaurant restaurant;
-    SavedListHolder savedListHolder;
-    RestaurantDBHelper dbHelper;
+    private Context context;
+    private Restaurant restaurant;
+    private SavedListHolder savedListHolder;
+    private RestaurantDBHelper dbHelper;
 
     public MainRestaurantCardAdapter(Context con, Restaurant res) {
         this.context = con;
@@ -55,6 +60,39 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         savedListHolder.getSavedList().add(res);
     }
 
+    /**
+     * Helper function to load the corresponding rating image for Yelp stars.
+     * Since Yelp v3 API (dubbed Fusion), they stopped providing a URL for the rating image, so this
+     * is why this function is needed.
+     *
+     * @param rating: rating to load stars for.
+     * @return corresponding drawable to the rating.
+     */
+    private int loadStars(Double rating) {
+        if (rating == 0.0)
+            return R.drawable.ic_zero_stars;
+        else if (rating == 1.0)
+            return R.drawable.ic_one_stars;
+        else if (rating == 1.5)
+            return R.drawable.ic_onehalf_stars;
+        else if (rating == 2.0)
+            return R.drawable.ic_two_stars;
+        else if (rating == 2.5)
+            return R.drawable.ic_twohalf_stars;
+        else if (rating == 3.0)
+            return R.drawable.ic_three_stars;
+        else if (rating == 3.5)
+            return R.drawable.ic_threehalf_stars;
+        else if (rating == 4.0)
+            return R.drawable.ic_four_stars;
+        else if (rating == 4.5)
+            return R.drawable.ic_fourhalf_stars;
+        else if (rating == 5.0)
+            return R.drawable.ic_five_stars;
+        else
+            return R.drawable.ic_zero_stars;
+    }
+
     @Override
     public RestaurantViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.view_main_restaurant_card, parent, false);
@@ -65,7 +103,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
     @Override
     public void onBindViewHolder(RestaurantViewHolder holder, int position) {
         Picasso.with(context).load(restaurant.getThumbnailURL()).into(holder.thumbnail);
-        Picasso.with(context).load(restaurant.getRatingImageURL()).into(holder.ratingImage);
+        holder.ratingImage.setImageResource(loadStars(restaurant.getRating()));
         holder.nameOfRestaurant.setText(restaurant.getName());
         holder.categories.setText(restaurant.getCategories().toString()
                 .replace("[", "").replace("]", "").trim());
@@ -76,8 +114,20 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         } else
             holder.deals.setVisibility(View.GONE);
 
-        holder.distanceAndReviewCount.setText(String.format(Locale.ENGLISH, "%d reviews | %.2f mi away",
-                restaurant.getReviewCount(), restaurant.getDistance()));
+        String priceText = String.format("%s", restaurant.getPrice());
+        String reviewsText = String.format(Locale.ENGLISH, "%d reviews", restaurant.getReviewCount());
+        String distanceText = String.format(Locale.ENGLISH, "%.2f mi away", restaurant.getDistance());
+
+        // Color coding dollar signs for price and number of reviews.
+        Spannable spannable = new SpannableString(String.format(Locale.ENGLISH, "%s | %s | %s",
+                priceText, reviewsText, distanceText));
+        spannable.setSpan(new ForegroundColorSpan(Color.parseColor("#14AD5F")), 0, priceText.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spannable.setSpan(new ForegroundColorSpan(Color.parseColor("#1A6C9D")), priceText.length() + 3,
+                (priceText.length() + 3 + String.valueOf(restaurant.getReviewCount()).length()),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        holder.distancePriceReviewCount.setText(spannable);
 
         // Modify the save button depending on if the restaurant in the savedList or not.
         if (restaurant.isSaved()) {
@@ -91,18 +141,18 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
         return 1;
     }
 
-    public class RestaurantViewHolder extends RecyclerView.ViewHolder {
+    class RestaurantViewHolder extends RecyclerView.ViewHolder {
 
         TextView nameOfRestaurant;
         ImageView ratingImage;
         ImageView thumbnail;
         TextView categories;
         TextView deals;
-        TextView distanceAndReviewCount;
+        TextView distancePriceReviewCount;
 
         ImageButton saveButton;
 
-        public RestaurantViewHolder(View itemView) {
+        RestaurantViewHolder(View itemView) {
             super(itemView);
 
             nameOfRestaurant = (TextView) itemView.findViewById(R.id.name);
@@ -110,7 +160,7 @@ public class MainRestaurantCardAdapter extends RecyclerView.Adapter<MainRestaura
             thumbnail = (ImageView) itemView.findViewById(R.id.thumbnail);
             categories = (TextView) itemView.findViewById(R.id.categories);
             deals = (TextView) itemView.findViewById(R.id.deals);
-            distanceAndReviewCount = (TextView) itemView.findViewById(R.id.distanceAndReviewCount);
+            distancePriceReviewCount = (TextView) itemView.findViewById(R.id.distancePriceReviewCount);
 
             saveButton = (ImageButton) itemView.findViewById(R.id.saveButton);
 

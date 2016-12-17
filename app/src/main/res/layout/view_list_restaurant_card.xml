@@ -8,9 +8,9 @@
     android:layout_marginLeft="@dimen/_8sdp"
     android:layout_marginRight="@dimen/_8sdp"
     android:layout_marginTop="@dimen/_4sdp"
-    map:contentPadding="@dimen/_4sdp"
     map:cardCornerRadius="@dimen/_2sdp"
-    map:cardElevation="2dp">
+    map:cardElevation="2dp"
+    map:contentPadding="@dimen/_4sdp">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -70,14 +70,14 @@
             android:textSize="@dimen/_12sdp" />
 
         <TextView
-            android:id="@+id/listDistanceAndReviewCount"
+            android:id="@+id/listDistancePriceReviewCount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="@dimen/_4sdp"
-            android:textAppearance="?android:attr/textAppearanceSmall"
             android:layout_below="@+id/listDeals"
+            android:layout_toEndOf="@+id/listImageHolder"
             android:layout_toRightOf="@+id/listImageHolder"
-            android:layout_toEndOf="@+id/listImageHolder" />
+            android:paddingLeft="@dimen/_4sdp"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
 
 
     </RelativeLayout>

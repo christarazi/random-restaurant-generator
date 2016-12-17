@@ -22,21 +22,21 @@ public class RestaurantDBHelper extends SQLiteOpenHelper {
 
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_NAME = "restaurantsDB.db";
-    public static final String TABLE_RESTAURANTS = "restaurants";
+    private static final String TABLE_RESTAURANTS = "restaurants";
 
-    public static final String COLUMN_ID = "_id";
-    public static final String COLUMN_RESTNAME = "restaurantname";
-    public static final String COLUMN_RATING = "rating";
-    public static final String COLUMN_RATINGURL = "ratingurl";
-    public static final String COLUMN_THUMBNAILURL = "thumbnailurl";
-    public static final String COLUMN_URL = "url";
-    public static final String COLUMN_CATEGORIES = "categories";
-    public static final String COLUMN_ADDRESS = "address";
-    public static final String COLUMN_REVIEWCOUNT = "reviewcount";
-    public static final String COLUMN_DEAL = "deal";
-    public static final String COLUMN_DISTANCE = "distance";
-    public static final String COLUMN_LAT = "lat";
-    public static final String COLUMN_LON = "lon";
+    private static final String COLUMN_ID = "_id";
+    private static final String COLUMN_RESTNAME = "restaurantname";
+    private static final String COLUMN_RATING = "rating";
+    private static final String COLUMN_THUMBNAILURL = "thumbnailurl";
+    private static final String COLUMN_URL = "url";
+    private static final String COLUMN_CATEGORIES = "categories";
+    private static final String COLUMN_ADDRESS = "address";
+    private static final String COLUMN_REVIEWCOUNT = "reviewcount";
+    private static final String COLUMN_DEAL = "deal";
+    private static final String COLUMN_PRICE = "price";
+    private static final String COLUMN_DISTANCE = "distance";
+    private static final String COLUMN_LAT = "lat";
+    private static final String COLUMN_LON = "lon";
 
     public RestaurantDBHelper(Context context, SQLiteDatabase.CursorFactory factory) {
         super(context, DATABASE_NAME, factory, DATABASE_VERSION);
@@ -49,13 +49,13 @@ public class RestaurantDBHelper extends SQLiteOpenHelper {
                 + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + COLUMN_RESTNAME + " TEXT,"
                 + COLUMN_RATING + " REAL,"
-                + COLUMN_RATINGURL + " TEXT,"
                 + COLUMN_THUMBNAILURL + " TEXT,"
                 + COLUMN_URL + " TEXT,"
                 + COLUMN_CATEGORIES + " TEXT,"
                 + COLUMN_ADDRESS + " TEXT,"
                 + COLUMN_REVIEWCOUNT + " INTEGER,"
                 + COLUMN_DEAL + " TEXT,"
+                + COLUMN_PRICE + " TEXT,"
                 + COLUMN_DISTANCE + " REAL,"
                 + COLUMN_LAT + " REAL,"
                 + COLUMN_LON + " REAL"
@@ -75,7 +75,6 @@ public class RestaurantDBHelper extends SQLiteOpenHelper {
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_RESTNAME, res.getName());
         cv.put(COLUMN_RATING, res.getRating());
-        cv.put(COLUMN_RATINGURL, res.getRatingImageURL());
         cv.put(COLUMN_THUMBNAILURL, res.getThumbnailURL());
         cv.put(COLUMN_URL, res.getUrl());
 
@@ -93,6 +92,7 @@ public class RestaurantDBHelper extends SQLiteOpenHelper {
 
         cv.put(COLUMN_REVIEWCOUNT, res.getReviewCount());
         cv.put(COLUMN_DEAL, res.getDeal());
+        cv.put(COLUMN_PRICE, res.getPrice());
         cv.put(COLUMN_DISTANCE, res.getDistance());
         cv.put(COLUMN_LAT, res.getLat());
         cv.put(COLUMN_LON, res.getLon());
@@ -132,13 +132,13 @@ public class RestaurantDBHelper extends SQLiteOpenHelper {
                     Restaurant restaurant = new Restaurant(
                             cursor.getString(cursor.getColumnIndex(COLUMN_RESTNAME)),
                             cursor.getFloat(cursor.getColumnIndex(COLUMN_RATING)),
-                            cursor.getString(cursor.getColumnIndex(COLUMN_RATINGURL)),
                             cursor.getString(cursor.getColumnIndex(COLUMN_THUMBNAILURL)),
                             cursor.getInt(cursor.getColumnIndex(COLUMN_REVIEWCOUNT)),
                             cursor.getString(cursor.getColumnIndex(COLUMN_URL)),
                             resCategories,
                             resAddress,
                             cursor.getString(cursor.getColumnIndex(COLUMN_DEAL)),
+                            cursor.getString(cursor.getColumnIndex(COLUMN_PRICE)),
                             cursor.getDouble(cursor.getColumnIndex(COLUMN_DISTANCE)),
                             cursor.getDouble(cursor.getColumnIndex(COLUMN_LAT)),
                             cursor.getDouble(cursor.getColumnIndex(COLUMN_LON))
