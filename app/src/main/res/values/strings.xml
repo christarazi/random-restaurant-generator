@@ -20,7 +20,7 @@
     <string name="string_location_perm_rationale">Location permissions have been denied. Please enable them manually in settings.</string>
     <string name="string_location_perm_manual">Location permissions denied. Please enter location manually.</string>
     <string name="string_price_range">Price range</string>
-    <string name="string_filter_msg">Optionally enter your filter categories and price range</string>
+    <string name="string_filter_msg">Optionally enter your filter categories, price range, and time restaurants are open</string>
     <string name="title_settings_dialog">Permissions Required</string>
     <string name="string_one_dollar">$</string>
     <string name="string_two_dollar">$$</string>
