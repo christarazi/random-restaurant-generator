@@ -121,16 +121,36 @@ public class ListRestaurantCardAdapter extends RecyclerView.Adapter<ListRestaura
         // Color coding dollar signs for price and number of reviews.
         Spannable spannable = new SpannableString(String.format(Locale.ENGLISH, "%s | %s | %s",
                 priceText, reviewsText, distanceText));
-        spannable.setSpan(new ForegroundColorSpan(Color.parseColor("#14AD5F")), 0, priceText.length(),
+
+        int startIndex = 0;
+        int endIndex = priceText.length();
+
+        // Price
+        spannable.setSpan(new ForegroundColorSpan(Color.parseColor("#14AD5F")),
+                startIndex,
+                endIndex,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        spannable.setSpan(new ForegroundColorSpan(Color.parseColor("#1A6C9D")), priceText.length() + 3,
-                (priceText.length() + 3 + String.valueOf(restaurant.getReviewCount()).length()),
+
+        startIndex = endIndex + 3;
+        endIndex += 3 + String.valueOf(restaurant.getReviewCount()).length();
+
+        // Review count
+        spannable.setSpan(new ForegroundColorSpan(Color.parseColor("#1A6C9D")),
+                startIndex,
+                endIndex,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        startIndex = endIndex + 3 +
+                (reviewsText.length() - String.valueOf(restaurant.getReviewCount()).length());
+        endIndex = startIndex + (distanceText.length() - " mi away".length());
+
+        // Distance (miles away)
+        spannable.setSpan(new ForegroundColorSpan(Color.parseColor("#FF764A")),
+                startIndex,
+                endIndex,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         holder.distancePriceReviewCount.setText(spannable);
-
-        holder.distancePriceReviewCount.setText(String.format(Locale.ENGLISH, "%s | %d reviews | %.2f mi away",
-                restaurant.getPrice(), restaurant.getReviewCount(), restaurant.getDistance()));
     }
 
     @Override

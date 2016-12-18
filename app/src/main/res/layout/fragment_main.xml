@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="@string/string_filter_msg"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             android:textColor="@color/dark_gray" />
 
         <android.support.design.widget.TextInputLayout
@@ -41,6 +41,8 @@
                 android:gravity="center_vertical|start"
                 android:hint="@string/filter_hint"
                 android:imeOptions="actionDone"
+                android:inputType="textWebEditText"
+                android:maxLines="1"
                 android:textSize="@dimen/_12sdp" />
 
         </android.support.design.widget.TextInputLayout>
@@ -52,20 +54,34 @@
             android:layout_marginTop="@dimen/_8sdp"
             android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/priceFilter"
+            <CheckBox
+                android:id="@+id/priceOne"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:ems="10"
-                android:text="@string/string_price_range"
-                android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+                android:text="@string/string_one_dollar" />
 
-            <SeekBar
-                android:id="@+id/priceFilterBar"
-                android:layout_width="fill_parent"
+            <CheckBox
+                android:id="@+id/priceTwo"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:text="@string/string_two_dollar" />
+
+            <CheckBox
+                android:id="@+id/priceThree"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/string_three_dollar" />
+
+            <CheckBox
+                android:id="@+id/priceFour"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/string_four_dollar" />
+
         </LinearLayout>
 
     </LinearLayout>

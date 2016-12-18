@@ -1,6 +1,7 @@
 package com.chris.randomrestaurantgenerator.fragments;
 
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -55,7 +56,12 @@ public class AboutFragment extends Fragment {
         }
 
         htmlAbout = (HtmlTextView) rootLayout.findViewById(R.id.htmlAbout);
-        htmlAbout.setHtmlFromRawResource(getActivity(), R.raw.about, new HtmlTextView.RemoteImageGetter());
+        htmlAbout.setHtml(R.raw.about, new Html.ImageGetter() {
+            @Override
+            public Drawable getDrawable(String s) {
+                return null;
+            }
+        });
 
         return rootLayout;
     }

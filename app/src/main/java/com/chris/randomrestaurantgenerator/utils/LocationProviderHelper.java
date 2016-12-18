@@ -7,7 +7,6 @@ import android.content.IntentSender;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.chris.randomrestaurantgenerator.R;
@@ -22,9 +21,9 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
-import java.util.Arrays;
 import java.util.List;
 
+import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -133,19 +132,17 @@ public class LocationProviderHelper implements LocationListener,
     public void onPermissionsDenied(int requestCode, List<String> perms) {
         Log.d("RRG", "onPermissionsDenied:" + requestCode + ":" + perms.size());
 
-        // Handle negative button on click listener
-        DialogInterface.OnClickListener onClickListener = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Toast.makeText(activity, R.string.string_location_perm_manual, Toast.LENGTH_SHORT).show();
-            }
-        };
-
-        // (Optional) Check whether the user denied permissions and checked NEVER ASK AGAIN.
+        // (Optional) Check whether the user denied any permissions and checked "NEVER ASK AGAIN."
         // This will display a dialog directing them to enable the permission in app settings.
-        EasyPermissions.checkDeniedPermissionsNeverAskAgain(activity,
-                activity.getString(R.string.string_location_perm_rationale),
-                R.string.settings, R.string.cancel, onClickListener, Arrays.asList(PERMISSIONS));
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            new AppSettingsDialog.Builder(activity, activity.getResources().getString(R.string.string_location_perm_rationale))
+                    .setTitle(activity.getResources().getString(R.string.title_settings_dialog))
+                    .setPositiveButton(activity.getResources().getString(R.string.settings))
+                    .setNegativeButton(activity.getResources().getString(R.string.cancel), null /* click listener */)
+                    .setRequestCode(AppSettingsDialog.DEFAULT_SETTINGS_REQ_CODE)
+                    .build()
+                    .show();
+        }
     }
 
     public void checkLocationSettings() {

@@ -23,10 +23,10 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,6 +55,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -82,8 +83,10 @@ public class MainActivityFragment extends Fragment implements
 
     FloatingSearchView searchLocationBox;
     EditText filterBox;
-    SeekBar priceFilterBar;
-    TextView priceFilter;
+    CheckBox priceOne;
+    CheckBox priceTwo;
+    CheckBox priceThree;
+    CheckBox priceFour;
     Button generate;
     int generateBtnColor;
 
@@ -135,8 +138,10 @@ public class MainActivityFragment extends Fragment implements
         mapView.onCreate(mapViewSavedInstanceState);
 
         filterBox = (EditText) rootLayout.findViewById(R.id.filterBox);
-        priceFilterBar = (SeekBar) rootLayout.findViewById(R.id.priceFilterBar);
-        priceFilter = (TextView) rootLayout.findViewById(R.id.priceFilter);
+        priceOne = (CheckBox) rootLayout.findViewById(R.id.priceOne);
+        priceTwo = (CheckBox) rootLayout.findViewById(R.id.priceTwo);
+        priceThree = (CheckBox) rootLayout.findViewById(R.id.priceThree);
+        priceFour = (CheckBox) rootLayout.findViewById(R.id.priceFour);
         generate = (Button) rootLayout.findViewById(R.id.generate);
         generateBtnColor = Color.parseColor("#F6511D");
 
@@ -210,6 +215,7 @@ public class MainActivityFragment extends Fragment implements
             @Override
             public void onActionMenuItemSelected(MenuItem item) {
                 int id = item.getItemId();
+                restartQuery = true;
 
                 if (id == R.id.search_box_gps)
                     locationHelper.requestLocation();
@@ -232,6 +238,7 @@ public class MainActivityFragment extends Fragment implements
 
             @Override
             public void onSearchAction(String currentQuery) {
+                restartQuery = true;
                 searchLocationBox.setSearchText(currentQuery);
                 searchLocationBox.setSearchBarTitle(currentQuery);
             }
@@ -243,33 +250,9 @@ public class MainActivityFragment extends Fragment implements
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
                     hideSoftKeyboard();
-                    generate.performClick();
                     return true;
                 }
                 return false;
-            }
-        });
-
-        priceFilterBar.incrementProgressBy(1);
-        priceFilterBar.setMax(4);
-        priceFilterBar.setProgress(0);
-        priceFilterBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int seek, boolean b) {
-                String price = "";
-                for (int i = 0; i < seek; i++)
-                    price += "$";
-                priceFilter.setText(price);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
             }
         });
 
@@ -301,10 +284,6 @@ public class MainActivityFragment extends Fragment implements
                 }
                 else if (searchQuery.compareTo(searchLocationBox.getQuery()) != 0 ||
                     filterQuery.compareTo(filterBox.getText().toString()) != 0) {
-
-                    restartQuery = true;
-                    runBackgroundQueryAfter = true;
-                    restaurants.clear();
 
                     searchQuery = searchLocationBox.getQuery();
                     filterQuery = filterBox.getText().toString();
@@ -615,7 +594,7 @@ public class MainActivityFragment extends Fragment implements
         return new MaterialShowcaseView.Builder(getActivity())
                 .setTarget(target)
                 .setShape(shape)
-                .setMaskColour(Color.argb(230, 0, 166, 237))
+                .setMaskColour(Color.parseColor("#1A6C9D"))
                 .setContentText(contentText)
                 .setDismissText("GOT IT")
                 .build();
@@ -674,6 +653,11 @@ public class MainActivityFragment extends Fragment implements
         restaurantView.setVisibility(View.VISIBLE);
     }
 
+    private void hideNormalLayout() {
+        mapCardContainer.setVisibility(View.GONE);
+        restaurantView.setVisibility(View.GONE);
+    }
+
     /**
      * Helper function to display an AlertDialog
      * @param stringToDisplay:  the string to display in the alert.
@@ -708,15 +692,40 @@ public class MainActivityFragment extends Fragment implements
 
         // Build Yelp request.
         try {
-            String requestUrl = "https://api.yelp.com/v3/businesses/search";
             URL url;
             HttpURLConnection urlConnection;
+            String requestUrl = "https://api.yelp.com/v3/businesses/search";
+            StringBuilder builder = new StringBuilder(requestUrl);
+
+            builder.append("?").append(filter);
+            builder.append("&limit=" + 50);
+            builder.append("&offset=").append(offset);
+
+            // Check if the user wants to filter by price range.
+            StringBuilder priceBuilder = new StringBuilder("");
+            ArrayList<String> priceRange = new ArrayList<>();
+
+            if (priceOne.isChecked() || priceTwo.isChecked() ||
+                    priceThree.isChecked() || priceFour.isChecked())
+                builder.append("&price=");
+
+            if (priceOne.isChecked()) priceRange.add("1");
+            if (priceTwo.isChecked()) priceRange.add("2");
+            if (priceThree.isChecked()) priceRange.add("3");
+            if (priceFour.isChecked()) priceRange.add("4");
+
+            // Making sure to prevent trailing commas in price range list.
+            for (String elem : priceRange) {
+                priceBuilder.append(elem);
+                if (priceRange.indexOf(elem) != (priceRange.size() - 1))
+                    priceBuilder.append(",");
+            }
+            builder.append(priceBuilder.toString());
 
             if (LocationProviderHelper.useGPS) {
-                requestUrl += "?" + filter;
-                requestUrl += "&latitude=" + lat;
-                requestUrl += "&longitude=" + lon;
-                requestUrl += "&offset=" + offset;
+                builder.append("&latitude=").append(lat);
+                builder.append("&longitude=").append(lon);
+                requestUrl = builder.toString();
 
                 url = new URL(requestUrl);
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -726,9 +735,8 @@ public class MainActivityFragment extends Fragment implements
 
                 Log.d("RRG", "request made: " + requestUrl);
             } else {
-                requestUrl += "?" + filter;
-                requestUrl += "&location=" + input;
-                requestUrl += "&offset=" + offset;
+                builder.append("&location=").append(input);
+                requestUrl = builder.toString();
 
                 url = new URL(requestUrl);
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -756,6 +764,7 @@ public class MainActivityFragment extends Fragment implements
             // Get JSON array that holds the listings from Yelp.
             JSONArray jsonBusinessesArray = response.getJSONArray("businesses");
             int length = jsonBusinessesArray.length();
+            Log.d("RRG", "length: " + length);
 
             // This occurs if a network communication error occurs or if no restaurants were found.
             if (length <= 0) {
@@ -784,7 +793,10 @@ public class MainActivityFragment extends Fragment implements
                 errorInQuery = TypeOfError.NO_RESTAURANTS;
             else if (e.getMessage().contains("No value for"))
                 errorInQuery = TypeOfError.MISSING_INFO;
-
+            e.printStackTrace();
+            return false;
+        } catch (FileNotFoundException e) {
+            errorInQuery = TypeOfError.INVALID_LOCATION;
             e.printStackTrace();
             return false;
         } catch (Exception e) {
@@ -907,6 +919,7 @@ public class MainActivityFragment extends Fragment implements
 
             if (restartQuery) {
                 ((CircularProgressDrawable) progressBar.getIndeterminateDrawable()).start();
+                hideNormalLayout();
                 progressBar.setVisibility(View.VISIBLE);
             }
         }
@@ -991,25 +1004,44 @@ public class MainActivityFragment extends Fragment implements
         protected void onPostExecute(Restaurant restaurant) {
 
             if (restaurant == null) {
-                if (errorInQuery == TypeOfError.NO_RESTAURANTS) {
-                    Toast.makeText(getContext(),
-                            R.string.string_no_restaurants_found,
-                            Toast.LENGTH_LONG).show();
-                    restaurants.clear();
-                } else if (errorInQuery == TypeOfError.MISSING_INFO) {
-                    // Try again if the current restaurant has missing info.
-                    generate.performClick();
-                    return;
-                }
-                else if (errorInQuery == TypeOfError.NETWORK_CONNECTION_ERROR) {
-                    Toast.makeText(getContext(),
-                            R.string.string_no_network,
-                            Toast.LENGTH_LONG).show();
-                }
-                else if (errorInQuery == TypeOfError.TIMED_OUT) {
-                    Toast.makeText(getContext(),
-                            R.string.string_timed_out_msg,
-                            Toast.LENGTH_LONG).show();
+                switch (errorInQuery) {
+                    case TypeOfError.NO_RESTAURANTS: {
+                        Toast.makeText(getContext(),
+                                R.string.string_no_restaurants_found,
+                                Toast.LENGTH_LONG).show();
+                        restaurants.clear();
+                        break;
+                    }
+
+                    case TypeOfError.MISSING_INFO: {
+                        // Try again if the current restaurant has missing info.
+                        generate.performClick();
+                        return;
+                    }
+
+                    case TypeOfError.NETWORK_CONNECTION_ERROR: {
+                        Toast.makeText(getContext(),
+                                R.string.string_no_network,
+                                Toast.LENGTH_LONG).show();
+                        break;
+                    }
+
+                    case TypeOfError.TIMED_OUT: {
+                        Toast.makeText(getContext(),
+                                R.string.string_timed_out_msg,
+                                Toast.LENGTH_LONG).show();
+                        break;
+                    }
+
+                    case TypeOfError.INVALID_LOCATION: {
+                        Toast.makeText(getContext(),
+                                R.string.string_no_restaurants_found,
+                                Toast.LENGTH_LONG).show();
+                        break;
+                    }
+
+                    default:
+                        break;
                 }
 
                 if (initialYelpQuery!= null) initialYelpQuery.cancel(true);
@@ -1031,6 +1063,7 @@ public class MainActivityFragment extends Fragment implements
             mainRestaurantCardAdapter.remove();
             mainRestaurantCardAdapter.add(currentRestaurant);
 
+            showNormalLayout();
             updateMapWithRestaurant(currentRestaurant);
             enableGenerateButton();
 
@@ -1106,6 +1139,7 @@ public class MainActivityFragment extends Fragment implements
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                Log.d("RRG", "doInBackground: background");
             }
 
             queryYelp(lat, lon, userInputStr, userFilterStr, offset, 1);
