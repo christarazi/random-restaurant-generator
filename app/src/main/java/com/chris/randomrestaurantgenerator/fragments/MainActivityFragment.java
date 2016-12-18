@@ -632,26 +632,18 @@ public class MainActivityFragment extends Fragment implements
                 builder.append("&latitude=").append(lat);
                 builder.append("&longitude=").append(lon);
                 requestUrl = builder.toString();
-
-                url = new URL(requestUrl);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.addRequestProperty("Authorization", "Bearer " + accessToken);
-                urlConnection.setConnectTimeout(10 * 1000);
-                urlConnection.setReadTimeout(10 * 1000);
-
                 Log.d("RRG", "request made: " + requestUrl);
             } else {
                 builder.append("&location=").append(input);
                 requestUrl = builder.toString();
-
-                url = new URL(requestUrl);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.addRequestProperty("Authorization", "Bearer " + accessToken);
-                urlConnection.setConnectTimeout(10 * 1000);
-                urlConnection.setReadTimeout(10 * 1000);
-
                 Log.d("RRG", "request made: " + requestUrl);
             }
+
+            url = new URL(requestUrl);
+            urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.addRequestProperty("Authorization", String.format("Bearer %s", accessToken));
+            urlConnection.setConnectTimeout(10 * 1000);
+            urlConnection.setReadTimeout(10 * 1000);
 
             // Make connection and read the response.
             urlConnection.connect();
