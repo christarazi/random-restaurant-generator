@@ -60,7 +60,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -109,14 +108,11 @@ public class MainActivityFragment extends Fragment implements
     int errorInQuery;
     boolean taskRunning = false;
     boolean restartQuery = true;
-    boolean runBackgroundQueryAfter = true;
     String searchQuery = "";
     String filterQuery = "";
-    ArrayList<String> multiFilters = new ArrayList<>();
 
     CircularProgressBar progressBar;
     AsyncTask initialYelpQuery;
-    AsyncTask backgroundYelpQuery;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -293,8 +289,10 @@ public class MainActivityFragment extends Fragment implements
                             .getString(R.string.string_current_location));
                 }
 
-                if (LocationProviderHelper.useGPS) {
+                // Replace all spaces from filters for Yelp query.
+                String filterBoxText = filterBox.getText().toString().replaceAll(" ", "");
 
+                if (LocationProviderHelper.useGPS) {
                     /**
                      * Check to make sure the location is not null before starting.
                      * Else, begin the AsyncTask.
@@ -303,64 +301,13 @@ public class MainActivityFragment extends Fragment implements
                     if (location == null) {
                         displayAlertDialog(R.string.string_location_not_found, "Error");
                     } else {
-
-                        String filterBoxText = filterBox.getText().toString();
-                        List<String> filterList = Arrays.asList(filterBox.getText().toString().split(","));
-
-                        /**
-                         * Split the filters by comma if the user wants multiple filters.
-                         * Run separate query for each filter.
-                         *
-                         * If multiFilter contains all of filterList and restaurants is empty,
-                         * that the user has exhausted through all the restaurants, and we
-                         * must restart the query, so clear the multiFilters to start over.
-                         */
-                        if (multiFilters.containsAll(filterList) && restaurants.isEmpty())
-                            multiFilters.clear();
-
-                        if (filterBoxText.contains(",") && !multiFilters.containsAll(filterList)) {
-                            multiFilters.clear();
-                            multiFilters.addAll(filterList);
-
                             initialYelpQuery = new RunYelpQuery(
-                                    false,
-                                    String.valueOf(searchLocationBox.getQuery()),
-                                    multiFilters.get(0).trim(),
+                                    filterBoxText,
                                     String.valueOf(location.getLatitude()),
                                     String.valueOf(location.getLongitude()))
                                     .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-
-                            /**
-                             * Skip the first filter because we run the initial query
-                             * with the first filter above.
-                             * Everything after will be a background query, hence the background
-                             * query AsyncTask being run inside the body of this for loop.
-                             */
-                            for (String filter : multiFilters.subList(1, multiFilters.size())) {
-                                backgroundYelpQuery = new RunYelpQueryBackground(0)
-                                        .executeOnExecutor(
-                                                AsyncTask.THREAD_POOL_EXECUTOR,
-                                                String.valueOf(searchLocationBox.getQuery()),
-                                                filter.trim(),
-                                                String.valueOf(location.getLatitude()),
-                                                String.valueOf(location.getLongitude()));
-                            }
-                        }
-                        else {
-                            initialYelpQuery = new RunYelpQuery(
-                                    runBackgroundQueryAfter,
-                                    String.valueOf(searchLocationBox.getQuery()),
-                                    String.valueOf(filterBox.getText()),
-                                    String.valueOf(location.getLatitude()),
-                                    String.valueOf(location.getLongitude()))
-                                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        }
                     }
                 } else {
-
-                    String filterBoxText = filterBox.getText().toString();
-                    List<String> filterList = Arrays.asList(filterBox.getText().toString().split(","));
-
                     /**
                      * Verify that the user has actually entered a location.
                      * Else, begin the AsyncTask.
@@ -368,49 +315,10 @@ public class MainActivityFragment extends Fragment implements
                     if (searchLocationBox.getQuery().length() == 0 && restaurants.size() == 0) {
                         displayAlertDialog(R.string.string_enter_valid_location, "Error");
                     } else {
-
-                        /**
-                         * Split the filters by comma if the user wants multiple filters.
-                         * Run separate query for each filter.
-                         *
-                         * If multiFilter contains all of filterList and restaurants is empty,
-                         * that the user has exhausted through all the restaurants, and we
-                         * must restart the query, so clear the multiFilters to start over.
-                         */
-                        if (multiFilters.containsAll(filterList) && restaurants.isEmpty())
-                            multiFilters.clear();
-
-                        if (filterBoxText.contains(",") && !multiFilters.containsAll(filterList)) {
-                            multiFilters.clear();
-                            multiFilters.addAll(filterList);
-
                             initialYelpQuery = new RunYelpQuery(
-                                    false,
                                     String.valueOf(searchLocationBox.getQuery()),
-                                    multiFilters.get(0).trim())
+                                    filterBoxText)
                                     .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-
-                            /**
-                             * Skip the first filter because we run the initial query
-                             * with the first filter above.
-                             * Everything after will be a background query, hence the background
-                             * query AsyncTask being run inside the body of this for loop.
-                             */
-                            for (String filter : multiFilters.subList(1, multiFilters.size())) {
-                                backgroundYelpQuery = new RunYelpQueryBackground(0)
-                                        .executeOnExecutor(
-                                                AsyncTask.THREAD_POOL_EXECUTOR,
-                                                String.valueOf(searchLocationBox.getQuery()),
-                                                filter.trim());
-                            }
-                        }
-                        else {
-                            initialYelpQuery = new RunYelpQuery(
-                                    runBackgroundQueryAfter,
-                                    String.valueOf(searchLocationBox.getQuery()),
-                                    String.valueOf(filterBox.getText()))
-                                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                        }
                     }
                 }
             }
@@ -470,9 +378,6 @@ public class MainActivityFragment extends Fragment implements
             }
         }
 
-        if (backgroundYelpQuery != null && backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
-            backgroundYelpQuery.cancel(true);
-
         locationHelper.pauseAndSaveLocationUpdates();
     }
 
@@ -494,9 +399,6 @@ public class MainActivityFragment extends Fragment implements
         // Try to cancel the AsyncTask.
         if (initialYelpQuery != null && initialYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
             initialYelpQuery.cancel(true);
-
-        if (backgroundYelpQuery != null && backgroundYelpQuery.getStatus() == AsyncTask.Status.RUNNING)
-            backgroundYelpQuery.cancel(true);
 
         Log.d("RRG", "onDestroy");
     }
@@ -697,9 +599,13 @@ public class MainActivityFragment extends Fragment implements
             String requestUrl = "https://api.yelp.com/v3/businesses/search";
             StringBuilder builder = new StringBuilder(requestUrl);
 
-            builder.append("?").append(filter);
+            builder.append("?term=").append("food");
             builder.append("&limit=" + 50);
             builder.append("&offset=").append(offset);
+
+            // Check if user wants to filter by categories.
+            if (filter.length() != 0)
+                builder.append("&categories=").append(filter);
 
             // Check if the user wants to filter by price range.
             StringBuilder priceBuilder = new StringBuilder("");
@@ -774,8 +680,6 @@ public class MainActivityFragment extends Fragment implements
 
             for (int i = 0; i < length; i++) {
                 if (whichAsyncTask == 0 && initialYelpQuery.isCancelled())
-                    break;
-                else if (whichAsyncTask == 1 && backgroundYelpQuery.isCancelled())
                     break;
 
                 Restaurant res = convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(i));
@@ -905,11 +809,16 @@ public class MainActivityFragment extends Fragment implements
         String userFilterStr;
         boolean successfulQuery;
 
-        RunYelpQuery(boolean runBackgroundQuery, String... params) {
-            runBackgroundQueryAfter = runBackgroundQuery;
+        RunYelpQuery(String... params) {
             this.params = params;
-            userInputStr = params[0];
-            userFilterStr = params[1];
+
+            if (params.length == 2) {
+                userInputStr = params[0];
+                userFilterStr = params[1];
+            } else if (params.length == 3) {
+                userInputStr = "";
+                userFilterStr = params[0];
+            }
         }
 
         @Override
@@ -947,21 +856,10 @@ public class MainActivityFragment extends Fragment implements
                     userInputStr = userInputStr.replaceAll(" ", "+");
                 }
 
-                // If the user entered a filterBox, make sure to encode all spaces and "+" for URL query.
-                if (userFilterStr.length() != 0) {
-                    userFilterStr = userFilterStr.replaceAll(" ", "+");
-
-                    // Add Yelp API query verb.
-                    userFilterStr = String.format("term=%s", userFilterStr);
-                } else {
-                    // Default search term.
-                    userFilterStr = "term=food";
-                }
-
-                // If we have 4 parameters, then the user selected location and we must grab the lat / long.
-                if (params.length == 4) {
-                    lat = params[2];
-                    lon = params[3];
+                // If we have 3 parameters, then the user selected location and we must grab the lat / long.
+                if (params.length == 3) {
+                    lat = params[1];
+                    lon = params[2];
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -981,14 +879,6 @@ public class MainActivityFragment extends Fragment implements
                     // Make sure the restaurants list is not empty before accessing it.
                     chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
                     restaurants.remove(chosenRestaurant);
-
-                    /**
-                     * Run background query only if the following BOTH hold:
-                     *      1) initially set to true from constructor
-                     *      2) and successfulQuery is true
-                     */
-                    if (runBackgroundQueryAfter)
-                        runBackgroundQueryAfter = true;
                 }
             } else if (restaurants != null && !restaurants.isEmpty()) {
                 chosenRestaurant = restaurants.get(new Random().nextInt(restaurants.size()));
@@ -1045,7 +935,6 @@ public class MainActivityFragment extends Fragment implements
                 }
 
                 if (initialYelpQuery!= null) initialYelpQuery.cancel(true);
-                if (backgroundYelpQuery!= null) backgroundYelpQuery.cancel(true);
 
                 enableGenerateButton();
                 return;
@@ -1067,11 +956,6 @@ public class MainActivityFragment extends Fragment implements
             updateMapWithRestaurant(currentRestaurant);
             enableGenerateButton();
 
-            if (runBackgroundQueryAfter) {
-                backgroundYelpQuery = new RunYelpQueryBackground(20).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, this.params);
-                runBackgroundQueryAfter = false;
-            }
-
             // A tutorial that displays only once explaining the action that can be done on the restaurant card.
             MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(getActivity(), BuildConfig.VERSION_NAME + "CARD");
             ShowcaseConfig config = new ShowcaseConfig();
@@ -1085,66 +969,6 @@ public class MainActivityFragment extends Fragment implements
                     new CircleShape(), "Tap here to view your saved list."));
 
             sequence.start();
-        }
-    }
-
-    // Async task that runs in the background to query more restaurants from Yelp while the user
-    // goes through the initial list of restaurants.
-    public class RunYelpQueryBackground extends AsyncTask<String, Void, Void> {
-
-        int offset;
-
-        RunYelpQueryBackground(int offset) {
-            this.offset = offset;
-        }
-
-        @Override
-        protected void onCancelled() {
-            super.onCancelled();
-            Log.d("RRG", "Cancelled background Yelp AsyncTask");
-        }
-
-        @Override
-        protected Void doInBackground(String... params) {
-
-            if (isCancelled()) return null;
-
-            // Check for parameters so we can send the appropriate request based on user input.
-            String lat = "";
-            String lon = "";
-            String userInputStr = params[0];
-            String userFilterStr = params[1];
-
-            try {
-                // If the user entered some input, make sure to encode all spaces and "+" for URL query.
-                if (userInputStr.length() != 0) {
-                    userInputStr = userInputStr.replaceAll(" ", "+");
-                }
-
-                // If the user entered a filterBox, make sure to encode all spaces and "+" for URL query.
-                if (userFilterStr.length() != 0) {
-                    userFilterStr = userFilterStr.replaceAll(" ", "+");
-
-                    // Add Yelp API query verb.
-                    userFilterStr = String.format("term=%s", userFilterStr);
-                } else {
-                    // Default search term.
-                    userFilterStr = "term=food";
-                }
-
-                // If we have 4 parameters, then the user selected location and we must grab the lat / long.
-                if (params.length == 4) {
-                    lat = params[2];
-                    lon = params[3];
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.d("RRG", "doInBackground: background");
-            }
-
-            queryYelp(lat, lon, userInputStr, userFilterStr, offset, 1);
-
-            return null;
         }
     }
 }
