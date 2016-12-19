@@ -1,9 +1,8 @@
 package com.chris.randomrestaurantgenerator.fragments;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -13,11 +12,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -28,12 +25,13 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
@@ -64,10 +62,8 @@ import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -88,38 +84,39 @@ import uk.co.deanwild.materialshowcaseview.shape.RectangleShape;
  */
 public class MainActivityFragment extends Fragment implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, EasyPermissions.PermissionCallbacks {
+        GoogleApiClient.OnConnectionFailedListener, EasyPermissions.PermissionCallbacks,
+        TimePickerFragment.TimePickerCallbacks {
 
-    static long openAtTimeFilter = 0;
-    FloatingSearchView searchLocationBox;
-    EditText filterBox;
-    CheckBox priceOne;
-    CheckBox priceTwo;
-    CheckBox priceThree;
-    CheckBox priceFour;
-    Button generate;
-    Button pickTime;
-    int generateBtnColor;
-    RelativeLayout rootLayout;
-    RecyclerView restaurantView;
-    LinearLayout mapCardContainer;
-    LinearLayout filtersLayout;
-    LinearLayout priceFilterLayout;
-    MapView mapView;
-    GoogleMap map;
-    GoogleApiClient mGoogleApiClient;
-    MainRestaurantCardAdapter mainRestaurantCardAdapter;
-    LocationProviderHelper locationHelper;
-    Restaurant currentRestaurant;
     ArrayList<Restaurant> restaurants = new ArrayList<>();
-    String accessToken;
-    int errorInQuery;
-    boolean taskRunning = false;
-    boolean restartQuery = true;
-    String searchQuery = "";
-    String filterQuery = "";
-    CircularProgressBar progressBar;
     AsyncTask initialYelpQuery;
+    boolean restartQuery = true;
+    boolean taskRunning = false;
+    Button generate;
+    CheckBox priceFour;
+    CheckBox priceOne;
+    CheckBox priceThree;
+    CheckBox priceTwo;
+    CircularProgressBar progressBar;
+    EditText filterBox;
+    FloatingSearchView searchLocationBox;
+    GoogleApiClient mGoogleApiClient;
+    GoogleMap map;
+    int errorInQuery;
+    int generateBtnColor;
+    LinearLayout filtersLayout;
+    LinearLayout mapCardContainer;
+    LinearLayout priceFilterLayout;
+    LocationProviderHelper locationHelper;
+    long openAtTimeFilter = 0;
+    MainRestaurantCardAdapter mainRestaurantCardAdapter;
+    MapView mapView;
+    RecyclerView restaurantView;
+    RelativeLayout rootLayout;
+    Restaurant currentRestaurant;
+    String accessToken;
+    String filterQuery = "";
+    String searchQuery = "";
+    ToggleButton pickTime;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -145,7 +142,7 @@ public class MainActivityFragment extends Fragment implements
         priceTwo = (CheckBox) rootLayout.findViewById(R.id.priceTwo);
         priceThree = (CheckBox) rootLayout.findViewById(R.id.priceThree);
         priceFour = (CheckBox) rootLayout.findViewById(R.id.priceFour);
-        pickTime = (Button) rootLayout.findViewById(R.id.pickTime);
+        pickTime = (ToggleButton) rootLayout.findViewById(R.id.pickTime);
         generate = (Button) rootLayout.findViewById(R.id.generate);
         generateBtnColor = Color.parseColor("#F6511D");
 
@@ -260,10 +257,12 @@ public class MainActivityFragment extends Fragment implements
             }
         });
 
-        pickTime.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                showTimePickerDialog(view);
+        pickTime.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked)
+                    showTimePickerDialog();
+                else
+                    openAtTimeFilter = 0;
             }
         });
 
@@ -811,58 +810,45 @@ public class MainActivityFragment extends Fragment implements
         mapCardContainer.setVisibility(View.VISIBLE);
     }
 
-    public void showTimePickerDialog(View v) {
-        DialogFragment newFragment = new TimePickerFragment();
-        newFragment.show(getActivity().getSupportFragmentManager(), "timePicker");
+    /**
+     * This function launches the TimePicker dialog from the @Fragment TimePickerFragment.
+     * Set the callback listener to this class so we can receive the result in
+     *
+     * @func timePickerDataCallback()
+     */
+    public void showTimePickerDialog() {
+        TimePickerFragment tpf = new TimePickerFragment();
+        tpf.setListener(this);
+
+        //DialogFragment newFragment = new TimePickerFragment();
+        tpf.show(getActivity().getSupportFragmentManager(), "timePicker");
     }
 
-    /**
-     * TimePickerFragment needs to be static since we are defining it inside another
-     * Fragment (MainActivityFragment). The variable we want to modify @param openAtTimeFilter
-     * needs to be static as well since non-static variables cannot be accessed a static context.
-     * <p>
-     * Yes, it's ugly, I know. But it gets the job done for now.
-     * <p>
-     * TODO:
-     * Figure out a better way to pass data between two Fragments since this is very hackish.
-     */
-    public static class TimePickerFragment extends DialogFragment
-            implements TimePickerDialog.OnTimeSetListener {
+    @Override
+    public void timePickerDataCallback(long data) {
+        Log.d("RRG", "RECEIVED: " + data);
 
-        @NonNull
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            // Use the current time as the default values for the picker.
-            final Calendar c = Calendar.getInstance();
-            int hour = c.get(Calendar.HOUR_OF_DAY);
-            int minute = c.get(Calendar.MINUTE);
-
-            // Create a new instance of TimePickerDialog and return it.
-            return new TimePickerDialog(getActivity(), this, hour, minute,
-                    DateFormat.is24HourFormat(getActivity()));
+        // If we received a 0, then the user cancel out of the dialog.
+        if (data == 0) {
+            pickTime.setChecked(false);
+            return;
         }
 
-        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-            // Do something with the time chosen by the user.
-            SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-            df.setTimeZone(TimeZone.getDefault());
+        openAtTimeFilter = data;
 
-            final Calendar c = Calendar.getInstance();
-            int month = c.get(Calendar.MONTH) + 1;      // It is zero-based so add 1.
-            int day = c.get(Calendar.DAY_OF_MONTH);
-            int year = c.get(Calendar.YEAR);
+        Date date = new Date(data * 1000L);
+        /*
+         * Suppressing warning because we handle the timezone issue below
+         * by setting the default timezone manually.
+         */
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
+        sdf.setTimeZone(TimeZone.getDefault());
+        String formattedDate = sdf.format(date);
+        Log.d("RRG", "formattedDate: " + formattedDate);
 
-            Date date;
-            try {
-                Log.d("RRG", "onTimeSet: " + String.format("%02d/%02d/%04d %02d:%02d:00", month, day, year, hourOfDay, minute));
-                date = df.parse(String.format("%02d/%02d/%04d %02d:%02d:00",
-                        month, day, year, hourOfDay, minute));
-                openAtTimeFilter = date.getTime() / 1000;
-                Log.d("RRG", "onTimeSet: " + openAtTimeFilter);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-        }
+        // https://stackoverflow.com/a/3792554/2193236
+        pickTime.setTextOn(formattedDate);
+        pickTime.setChecked(pickTime.isChecked());
     }
 
     // Async task that connects to Yelp's API and queries for restaurants based on location / zip code.

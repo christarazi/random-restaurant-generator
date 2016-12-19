@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="@string/string_filter_msg"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
             android:textColor="@color/dark_gray" />
 
         <android.support.design.widget.TextInputLayout
@@ -46,6 +46,14 @@
                 android:textSize="@dimen/_12sdp" />
 
         </android.support.design.widget.TextInputLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/string_filter_by_price_range"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/dark_gray" />
 
         <LinearLayout
             android:id="@+id/priceFilterLayout"
@@ -84,11 +92,22 @@
 
         </LinearLayout>
 
-        <Button
-            android:id="@+id/pickTime"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Open At" />
+            android:gravity="center"
+            android:text="@string/string_open_at_time"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/dark_gray" />
+
+        <ToggleButton
+            android:id="@+id/pickTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_8sdp"
+            android:text="@string/string_open_at"
+            android:textColor="@color/black"
+            android:textOff="@string/string_any_time" />
 
     </LinearLayout>
 
