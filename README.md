@@ -14,6 +14,8 @@ If you don't like the place it finds, swipe it to the left to get a new one. Fou
 
 Features:
  - Filter your searches by entering a category or type of food you like (perfect for vegans).
+ - Filter your searches by price range ($, $$, $$$, $$$$).
+ - Filter by time restaurants are open at so you don't get one that is closed when you get there. 
  - Ability to use your GPS for places near you or enter a location manually to search a specific area.
  - Save restaurants to access them later if you want to narrow down your choices.
  - Ability to open the restaurant's page in Yelp for more information.
