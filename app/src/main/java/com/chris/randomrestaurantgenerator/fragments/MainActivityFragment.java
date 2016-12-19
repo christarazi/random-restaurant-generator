@@ -616,7 +616,7 @@ public class MainActivityFragment extends Fragment implements
 
             // Check if user wants to filter by categories.
             if (filter.length() != 0)
-                builder.append("&categories=").append(filter);
+                builder.append("&categories=").append(filter.toLowerCase());
 
             // Check if the user wants to filter by price range.
             StringBuilder priceBuilder = new StringBuilder("");
