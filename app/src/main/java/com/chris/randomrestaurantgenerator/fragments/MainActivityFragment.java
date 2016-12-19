@@ -281,9 +281,6 @@ public class MainActivityFragment extends Fragment implements
                     return;
                 }
 
-                showFilterElements();
-                showNormalLayout();
-
                 /**
                  * Initialize searchQuery and filterQuery if they're empty.
                  * Else set restartQuery to true if the queries have changed.
@@ -357,7 +354,7 @@ public class MainActivityFragment extends Fragment implements
         sequence.addSequenceItem(buildShowcaseView(searchLocationBox, new RectangleShape(0, 0),
                 "Enter any zip code, city, or address here.\n\n" +
                         "Click the GPS icon to use your current location.\n\n" +
-                        "Filter your results by clicking the magnifying glass if you're in the mood for something specific."
+                        "Tap the magnifying glass to see the filter options."
         ));
 
         sequence.start();
@@ -565,8 +562,8 @@ public class MainActivityFragment extends Fragment implements
 
     private void showNormalLayout() {
         filtersLayout.setVisibility(View.GONE);
-        mapCardContainer.setVisibility(View.VISIBLE);
         restaurantView.setVisibility(View.VISIBLE);
+        mapCardContainer.setVisibility(View.VISIBLE);
     }
 
     private void hideNormalLayout() {
@@ -648,13 +645,12 @@ public class MainActivityFragment extends Fragment implements
             if (LocationProviderHelper.useGPS) {
                 builder.append("&latitude=").append(lat);
                 builder.append("&longitude=").append(lon);
-                requestUrl = builder.toString();
-                Log.d("RRG", "request made: " + requestUrl);
             } else {
                 builder.append("&location=").append(input);
-                requestUrl = builder.toString();
-                Log.d("RRG", "request made: " + requestUrl);
             }
+
+            requestUrl = builder.toString();
+            Log.d("RRG", "request made: " + requestUrl);
 
             url = new URL(requestUrl);
             urlConnection = (HttpURLConnection) url.openConnection();
@@ -679,7 +675,7 @@ public class MainActivityFragment extends Fragment implements
             // Get JSON array that holds the listings from Yelp.
             JSONArray jsonBusinessesArray = response.getJSONArray("businesses");
             int length = jsonBusinessesArray.length();
-            Log.d("RRG", "length: " + length);
+            Log.d("RRG", "json response array length: " + length);
 
             // This occurs if a network communication error occurs or if no restaurants were found.
             if (length <= 0) {
@@ -730,7 +726,6 @@ public class MainActivityFragment extends Fragment implements
      */
     private Restaurant convertJSONToRestaurant(JSONObject obj) {
         try {
-            Log.d("RRG", "convertJSONToRestaurant: " + obj);
             // Getting the JSON array of categories
             JSONArray categoriesJSON = obj.getJSONArray("categories");
             ArrayList<String> categories = new ArrayList<>();
@@ -786,7 +781,7 @@ public class MainActivityFragment extends Fragment implements
                     categories, address, deals, price, distance, lat, lon);
         } catch (Exception e) {
             e.printStackTrace();
-            Log.d("RRG", "convertJSONToRestaurant: " + e.getMessage());
+            Log.d("RRG", "error in convertJSONToRestaurant: " + e.getMessage());
             return null;
         }
     }
@@ -826,7 +821,7 @@ public class MainActivityFragment extends Fragment implements
 
     @Override
     public void timePickerDataCallback(long data) {
-        Log.d("RRG", "RECEIVED: " + data);
+        Log.d("RRG", "timePickerDataCallback: " + data);
 
         // If we received a 0, then the user cancel out of the dialog.
         if (data == 0) {
@@ -844,7 +839,7 @@ public class MainActivityFragment extends Fragment implements
         @SuppressLint("SimpleDateFormat") SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
         sdf.setTimeZone(TimeZone.getDefault());
         String formattedDate = sdf.format(date);
-        Log.d("RRG", "formattedDate: " + formattedDate);
+        Log.d("RRG", "timePickerDataCallback formattedDate: " + formattedDate);
 
         // https://stackoverflow.com/a/3792554/2193236
         pickTime.setTextOn(formattedDate);
@@ -946,6 +941,7 @@ public class MainActivityFragment extends Fragment implements
             if (restaurant == null) {
                 switch (errorInQuery) {
                     case TypeOfError.NO_RESTAURANTS: {
+                        Log.d("RRG", "onPostExecute: NO_RESTAURANTS");
                         Toast.makeText(getContext(),
                                 R.string.string_no_restaurants_found,
                                 Toast.LENGTH_LONG).show();
@@ -954,12 +950,14 @@ public class MainActivityFragment extends Fragment implements
                     }
 
                     case TypeOfError.MISSING_INFO: {
+                        Log.d("RRG", "onPostExecute: MISSING_INFO");
                         // Try again if the current restaurant has missing info.
                         generate.performClick();
                         return;
                     }
 
                     case TypeOfError.NETWORK_CONNECTION_ERROR: {
+                        Log.d("RRG", "onPostExecute: NETWORK_CONNECTION_ERROR");
                         Toast.makeText(getContext(),
                                 R.string.string_no_network,
                                 Toast.LENGTH_LONG).show();
@@ -967,6 +965,7 @@ public class MainActivityFragment extends Fragment implements
                     }
 
                     case TypeOfError.TIMED_OUT: {
+                        Log.d("RRG", "onPostExecute: TIMED_OUT");
                         Toast.makeText(getContext(),
                                 R.string.string_timed_out_msg,
                                 Toast.LENGTH_LONG).show();
@@ -974,6 +973,7 @@ public class MainActivityFragment extends Fragment implements
                     }
 
                     case TypeOfError.INVALID_LOCATION: {
+                        Log.d("RRG", "onPostExecute: INVALID_LOCATION");
                         Toast.makeText(getContext(),
                                 R.string.string_no_restaurants_found,
                                 Toast.LENGTH_LONG).show();
