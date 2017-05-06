@@ -1,8 +1,6 @@
 # Random Restaurant Generator 
 
-<a href="https://play.google.com/store/apps/details?id=com.chris.randomrestaurantgenerator">
-<img alt="Get it on Google Play" src="http://steverichey.github.io/google-play-badge-svg/img/en_get.svg" />
-</a>
+[![PlayStore][playstore-image]][playstore-url]
 
 It uses the [Yelp API](https://www.yelp.com/developers) to query for restaurants and uses [Google Play Services location API](https://developers.google.com/android/reference/com/google/android/gms/location/package-summary). It also uses [Google Maps Android API](https://developers.google.com/maps/documentation/android-api/) for displaying the location of a restaurant.
 
@@ -34,3 +32,6 @@ git clone https://github.com/christarazi/random-restaurant-generator.git
 cd random-restaurant-generator/
 ./gradlew build
 ```
+
+[playstore-image]: https://mrpatiwi.github.io/app-badges/playstore.png
+[playstore-url]: https://play.google.com/store/apps/details?id=com.chris.randomrestaurantgenerator
