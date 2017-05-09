@@ -18,8 +18,6 @@
     <string name="cancel">Cancel</string>
     <string name="string_location_permission_required">Location permission are required to use GPS.</string>
     <string name="string_location_perm_rationale">Location permissions have been denied. Please enable them manually in settings.</string>
-    <string name="string_location_perm_manual">Location permissions denied. Please enter location manually.</string>
-    <string name="string_price_range">Price range</string>
     <string name="string_filter_msg">Optional filter settings</string>
     <string name="title_settings_dialog">Permissions Required</string>
     <string name="string_one_dollar">$</string>
