@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Random Restaurant Generator</string>
     <string name="aboutText">Random Restaurant Generator is an open source Android application that picks a restaurant for you based on your location. The source code can be found below.</string>
-    <string name="license">License: MIT</string>
+    <string name="license">License: GNU GPLv3</string>
     <string name="filter_hint">Categories e.g. vegan, sushi, bbq</string>
     <string name="string_button_text_generate">GENERATE</string>
     <string name="string_button_text_loading">LOADING…</string>
