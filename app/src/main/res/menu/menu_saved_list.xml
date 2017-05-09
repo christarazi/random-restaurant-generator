@@ -5,6 +5,6 @@
         android:id="@+id/action_delete_all"
         android:icon="@drawable/delete_sweep"
         android:orderInCategory="1"
-        android:title="Delete All"
+        android:title="@string/delete_all"
         app:showAsAction="ifRoom" />
 </menu>

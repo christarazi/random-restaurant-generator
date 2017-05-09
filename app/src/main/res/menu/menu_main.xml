@@ -6,13 +6,13 @@
         android:id="@+id/action_saved_list"
         android:icon="@drawable/view_list"
         android:orderInCategory="1"
-        android:title="Saved List"
+        android:title="@string/saved_list"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_about"
         android:icon="@drawable/information_outline"
         android:orderInCategory="2"
-        android:title="About"
+        android:title="@string/about"
         app:showAsAction="ifRoom" />
 </menu>

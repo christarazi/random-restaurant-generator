@@ -6,13 +6,13 @@
         android:id="@+id/search_box_gps"
         android:icon="@drawable/crosshairs_gps"
         android:orderInCategory="1"
-        android:title="GPS"
+        android:title="@string/gps"
         app:showAsAction="always" />
 
     <item
         android:id="@+id/search_box_filter"
         android:icon="@drawable/ic_search_black_24dp"
         android:orderInCategory="2"
-        android:title="Filter"
+        android:title="@string/filter"
         app:showAsAction="always" />
 </menu>

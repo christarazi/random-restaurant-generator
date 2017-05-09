@@ -28,5 +28,10 @@
     <string name="string_open_at_time">Open at time</string>
     <string name="string_open_at">Open At</string>
     <string name="string_any_time">Any time</string>
+    <string name="filter">Filter</string>
+    <string name="gps">GPS</string>
+    <string name="delete_all">Delete All</string>
+    <string name="saved_list">Saved List</string>
+    <string name="about">About</string>
 
 </resources>
