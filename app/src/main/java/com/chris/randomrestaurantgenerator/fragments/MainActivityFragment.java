@@ -596,12 +596,10 @@ public class MainActivityFragment extends Fragment implements
      * @param lon:              the user's longitude, null if @param input is not empty.
      * @param input             the user's location string, e.g. zip, city, etc.
      * @param filter            the user's filterBox string, e.g. sushi, bbq, etc.
-     * @param offset            the offset for the Yelp query.
-     * @param whichAsyncTask    the AsyncTask to cancel if necessary.
      * @return true if successful querying Yelp; false otherwise.
      */
     private boolean queryYelp(String lat, String lon, String input,
-                              String filter, int offset, int whichAsyncTask) {
+                              String filter) {
 
         // Build Yelp request.
         try {
@@ -612,7 +610,6 @@ public class MainActivityFragment extends Fragment implements
 
             builder.append("?term=").append("food");
             builder.append("&limit=" + 50);
-            builder.append("&offset=").append(offset);
 
             // Check if user wants to filter by categories.
             if (filter.length() != 0)
@@ -684,7 +681,7 @@ public class MainActivityFragment extends Fragment implements
             }
 
             for (int i = 0; i < length; i++) {
-                if (whichAsyncTask == 0 && initialYelpQuery.isCancelled())
+                if (initialYelpQuery.isCancelled())
                     break;
 
                 Restaurant res = convertJSONToRestaurant(jsonBusinessesArray.getJSONObject(i));
@@ -808,7 +805,6 @@ public class MainActivityFragment extends Fragment implements
     /**
      * This function launches the TimePicker dialog from the @Fragment TimePickerFragment.
      * Set the callback listener to this class so we can receive the result in
-     *
      * @func timePickerDataCallback()
      */
     public void showTimePickerDialog() {
@@ -918,7 +914,7 @@ public class MainActivityFragment extends Fragment implements
             // Get restaurants only when the restaurants list is empty.
             Restaurant chosenRestaurant = null;
             if (restaurants == null || restaurants.isEmpty()) {
-                successfulQuery = queryYelp(lat, lon, userInputStr, userFilterStr, 0, 0);
+                successfulQuery = queryYelp(lat, lon, userInputStr, userFilterStr);
 
                 if (successfulQuery && !restaurants.isEmpty()) {
                     // Make sure the restaurants list is not empty before accessing it.
