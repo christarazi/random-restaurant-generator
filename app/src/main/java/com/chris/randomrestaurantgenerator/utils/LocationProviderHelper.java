@@ -10,6 +10,8 @@ import android.util.Log;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.chris.randomrestaurantgenerator.R;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -37,18 +39,20 @@ public class LocationProviderHelper implements LocationListener,
         ResultCallback<LocationSettingsResult> {
 
     public static final int REQUEST_CHECK_SETTINGS = 1;
-    public static final int RC_LOCATION_PERM = 120;
-    public static final String[] PERMISSIONS = new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION};
     public static boolean useGPS = false;
+
+    private static final int RC_LOCATION_PERM = 120;
+    private static final String[] PERMISSIONS = new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION};
 
     private Activity activity;
     private GoogleApiClient mGoogleClient;
     private LocationRequest mLocationRequest;
     private LocationSettingsRequest mLocationSettingsRequest;
     private Location mCurrentLocation;
-    private Location mLastLocation;
     private FloatingSearchView searchLocationBox;
     private ProgressDialog progressDialog;
+
+    private boolean requestedLocationBefore = false;
 
     public LocationProviderHelper(final Activity act, FloatingSearchView infoBox,
                                   GoogleApiClient googleApiClient) {
@@ -100,7 +104,7 @@ public class LocationProviderHelper implements LocationListener,
             case LocationSettingsStatusCodes.SUCCESS:
                 // All location settings are satisfied. The client can
                 // initialize location requests here.
-                startLocationUpdates();
+                requestLocation();
                 break;
             case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
                 // Location settings are not satisfied, but this can be fixed
@@ -145,70 +149,70 @@ public class LocationProviderHelper implements LocationListener,
         }
     }
 
-    public void checkLocationSettings() {
+    private void checkLocationSettings() {
         PendingResult<LocationSettingsResult> result =
                 LocationServices.SettingsApi.checkLocationSettings(
                         mGoogleClient,
                         mLocationSettingsRequest
                 );
         result.setResultCallback(this);
+        requestedLocationBefore = true;
     }
 
-    public void startLocationUpdates() {
-        if (EasyPermissions.hasPermissions(activity, PERMISSIONS)) {
-
-            try {
-                Log.d("RRG", "Starting location updates...");
-                LocationServices.FusedLocationApi.requestLocationUpdates(
-                        mGoogleClient, mLocationRequest, this);
-
-                if (mLastLocation == null) {
-                    mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleClient);
-                    Log.d("RRG", "Reusing last location");
-                }
-
-                // Make sure mLastLocation is not null because getLastLocation() may return null.
-                if (mLastLocation != null) {
-                    onLocationChanged(mLastLocation);
-                } else {
-                    progressDialog.show();
-                    LocationServices.FusedLocationApi.requestLocationUpdates(
-                            mGoogleClient, mLocationRequest, this);
-                }
-            } catch (SecurityException ignored) {
-                // Ignoring exception because this is handled already by EasyPermissions.
-            }
-
-        } else {
-            EasyPermissions.requestPermissions(activity, activity.getString(R.string.string_location_permission_required),
-                    RC_LOCATION_PERM, PERMISSIONS);
-        }
+    private void stopLocationUpdates() {
+        if (mGoogleClient.isConnected())
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleClient, this);
     }
 
     public void requestLocation() {
-        if (EasyPermissions.hasPermissions(activity, PERMISSIONS)) {
-            progressDialog.show();
-            checkLocationSettings();
-            useGPS = true;
+        // Check Google Play Services before requesting location.
+        if (!mGoogleClient.isConnected()) {
+            GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+            int resultCode = apiAvailability.isGooglePlayServicesAvailable(activity);
+            if (resultCode != ConnectionResult.SUCCESS) {
+                if (apiAvailability.isUserResolvableError(resultCode)) {
+                    apiAvailability.getErrorDialog(activity, resultCode, 9000)
+                            .show();
+                } else {
+                    activity.finish();
+                }
+            }
         } else {
-            EasyPermissions.requestPermissions(activity, activity.getString(R.string.string_location_permission_required),
-                    RC_LOCATION_PERM, PERMISSIONS);
+            if (EasyPermissions.hasPermissions(activity, PERMISSIONS)) {
+                progressDialog.show();
+
+                if (!requestedLocationBefore)
+                    checkLocationSettings();
+
+                try {
+                    useGPS = true;
+                    Location ll = LocationServices.FusedLocationApi.getLastLocation(mGoogleClient);
+                    if (ll == null) {
+                        LocationServices.FusedLocationApi.requestLocationUpdates(
+                                mGoogleClient, mLocationRequest, this);
+                    } else {
+                        onLocationChanged(ll);
+                    }
+                } catch (SecurityException ignored) {
+                    // Ignoring exception because this is handled already by EasyPermissions.
+                    useGPS = false;
+                }
+            } else {
+                EasyPermissions.requestPermissions(activity,
+                        activity.getString(R.string.string_location_permission_required),
+                        RC_LOCATION_PERM, PERMISSIONS);
+            }
         }
     }
 
     public void pauseAndSaveLocationUpdates() {
         progressDialog.dismiss();
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleClient, this);
-
-        if (mCurrentLocation != null) {
-            mLastLocation = mCurrentLocation;
-            Log.d("RRG", "Saved location on pause");
-        }
+        stopLocationUpdates();
     }
 
     public void dismissLocationUpdater() {
         progressDialog.dismiss();
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleClient, this);
+        stopLocationUpdates();
         searchLocationBox.clearQuery();
     }
 
