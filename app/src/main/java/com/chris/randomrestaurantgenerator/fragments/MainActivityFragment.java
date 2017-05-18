@@ -288,8 +288,7 @@ public class MainActivityFragment extends Fragment implements
                 if (searchQuery.isEmpty() && filterQuery.isEmpty()) {
                     searchQuery = searchLocationBox.getQuery();
                     filterQuery = filterBox.getText().toString();
-                }
-                else if (searchQuery.compareTo(searchLocationBox.getQuery()) != 0 ||
+                } else if (searchQuery.compareTo(searchLocationBox.getQuery()) != 0 ||
                     filterQuery.compareTo(filterBox.getText().toString()) != 0) {
 
                     searchQuery = searchLocationBox.getQuery();
@@ -592,14 +591,13 @@ public class MainActivityFragment extends Fragment implements
     /**
      * Function to query Yelp for restaurants. Returns an ArrayList of Restaurants.
      *
-     * @param lat:              the user's latitude, null if @param input is not empty.
-     * @param lon:              the user's longitude, null if @param input is not empty.
-     * @param input             the user's location string, e.g. zip, city, etc.
-     * @param filter            the user's filterBox string, e.g. sushi, bbq, etc.
+     * @param lat:    the user's latitude, null if @param input is not empty.
+     * @param lon:    the user's longitude, null if @param input is not empty.
+     * @param input:  the user's location string, e.g. zip, city, etc.
+     * @param filter: the user's filterBox string, e.g. sushi, bbq, etc.
      * @return true if successful querying Yelp; false otherwise.
      */
-    private boolean queryYelp(String lat, String lon, String input,
-                              String filter) {
+    private boolean queryYelp(String lat, String lon, String input, String filter) {
 
         // Build Yelp request.
         try {
