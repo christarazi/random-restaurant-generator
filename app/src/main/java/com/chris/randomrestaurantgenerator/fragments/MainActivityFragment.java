@@ -219,7 +219,7 @@ public class MainActivityFragment extends Fragment implements
                 restartQuery = true;
 
                 if (id == R.id.search_box_gps)
-                    locationHelper.requestLocation();
+                    locationHelper.startLocationUpdates();
                 else if (id == R.id.search_box_filter) {
                     if (filtersLayout.getVisibility() == View.GONE) {
                         showFilterElements();
@@ -449,7 +449,7 @@ public class MainActivityFragment extends Fragment implements
                     case Activity.RESULT_OK: {
                         // All required changes were successfully made
                         Log.d("RRG", "Location enabled by user!");
-                        locationHelper.requestLocation();
+                        locationHelper.startLocationUpdates();
                         break;
                     }
                     case Activity.RESULT_CANCELED: {

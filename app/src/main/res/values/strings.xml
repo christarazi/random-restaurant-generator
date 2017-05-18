@@ -33,5 +33,7 @@
     <string name="delete_all">Delete All</string>
     <string name="saved_list">Saved List</string>
     <string name="about">About</string>
+    <string name="string_location_settings_inadequate">Location settings are inadequate, and cannot be fixed here. Fix in Settings.</string>
+    <string name="string_location_acquired">Location acquired.</string>
 
 </resources>
