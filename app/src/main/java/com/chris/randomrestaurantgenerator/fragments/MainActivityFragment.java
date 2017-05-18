@@ -786,19 +786,21 @@ public class MainActivityFragment extends Fragment implements
     /**
      * Update the map with a new marker based on restaurant's coordinates.
      *
-     * @param restaurant the restaurant that will be on the map.
+     * @param restaurant: the restaurant that will be on the map.
      */
     private void updateMapWithRestaurant(Restaurant restaurant) {
-        // Clear all the markers on the map.
-        map.clear();
+        if (mGoogleApiClient.isConnected()) {
+            // Clear all the markers on the map.
+            map.clear();
 
-        LatLng latLng = new LatLng(restaurant.getLat(), restaurant.getLon());
+            LatLng latLng = new LatLng(restaurant.getLat(), restaurant.getLon());
 
-        map.addMarker(new MarkerOptions().position(latLng).title(String.format("%s: %s",
-                restaurant.getName(), restaurant.getAddress())
-                .replace("[", "").replace("]", "").trim()));
-        map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14));
+            map.addMarker(new MarkerOptions().position(latLng).title(String.format("%s: %s",
+                    restaurant.getName(), restaurant.getAddress())
+                    .replace("[", "").replace("]", "").trim()));
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14));
 
+        }
         mapCardContainer.setVisibility(View.VISIBLE);
     }
 
